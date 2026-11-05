@@ -8,7 +8,8 @@ import { CONFIG } from './config.mjs';
 import { fetchUpstream } from './fetch-upstream.mjs';
 import { buildDistribution } from './build-distribution.mjs';
 import { patchOmni, patchAppIdentity } from './patch-brand.mjs';
-import { repackMac, shaLine } from './repack-mac.mjs';
+import { repackMac, shaLine, artifactName } from './repack-mac.mjs';
+import { patchInstallDir } from './repack-win.mjs';
 
 function sh(cmd, args, opts = {}) {
   const res = spawnSync(cmd, args, { maxBuffer: 64 * 1024 * 1024, ...opts });
@@ -53,7 +54,33 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
   const version = `${tagName}-molniya.1`;
   console.log(`[${os}] upstream ${tagName} → ${assetPath}`);
 
-  if (os !== 'mac') throw new Error(`Ветка ${os} реализуется в Task 9/10`);
+  if (os === 'win') {
+    // NSIS-инсталлятор Zena целиком извлекается семёркой: core/ = готовый браузер (проверено локально)
+    const winDir = path.join(workDir, 'win');
+    rmSync(winDir, { recursive: true, force: true });
+    mkdirSync(winDir, { recursive: true });
+    sh('7z', ['x', '-y', `-o${winDir}`, assetPath]);
+    const corePath = path.join(winDir, 'core');
+    const molniyaDir = path.join(winDir, 'Molniya'); // ASCII: кодировки unzip на Windows
+    if (!existsSync(corePath)) throw new Error('В инсталляторе нет core/ — структура изменилась');
+    const { renameSync } = await import('node:fs');
+    renameSync(corePath, molniyaDir);
+
+    const ini = await readFile(path.join(molniyaDir, 'application.ini'), 'utf8');
+    const geckoVersion = ini.match(/^Version=(.+)$/m)?.[1] ?? 'unknown';
+    const res = await patchInstallDir(molniyaDir, { zenTag: tagName, platform: 'win' });
+    console.log(`[win] бренд: ${res.replaced} строк, gecko ${geckoVersion}`);
+
+    const outDir = CONFIG.paths.dist;
+    mkdirSync(outDir, { recursive: true });
+    const zipPath = path.resolve(outDir, artifactName('win', version)); // cwd у zip = winDir
+    sh('zip', ['-qrX', zipPath, 'Molniya'], { cwd: winDir });
+    await appendFile(path.join(outDir, 'SHA256SUMS'), shaLine(zipPath) + '\n');
+    console.log(`[win] готово: ${zipPath}`);
+    return { artifactPath: zipPath, version };
+  }
+
+  if (os !== 'mac') throw new Error(`Ветка ${os} реализуется в Task 10`);
 
   const appDir = await unpackMac(assetPath, workDir);
   const contents = path.join(appDir, 'Contents');

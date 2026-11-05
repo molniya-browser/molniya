@@ -128,8 +128,8 @@ export async function patchAppIdentity(contentsDir, { platform } = {}) {
   const tmp = mkdtempSync(path.join(tmpdir(), 'identity-'));
   const result = { renamedBinary: false };
   try {
-    const resources =
-      platform === 'mac' ? path.join(contentsDir, 'Resources') : path.join(contentsDir, 'resources');
+    // mac: Resources внутри .app/Contents; win/linux: корень каталога установки
+    const resources = platform === 'mac' ? path.join(contentsDir, 'Resources') : contentsDir;
     const iniPath = path.join(resources, 'application.ini');
     if (existsSync(iniPath)) {
       let ini = await readFile(iniPath, 'utf8');

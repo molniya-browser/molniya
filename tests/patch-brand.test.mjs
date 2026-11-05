@@ -92,12 +92,11 @@ test('patchAppIdentity (mac): AppConstants, application.ini c бампом Build
   assert.doesNotMatch(strings, />Zen</);
 });
 
-test('patchAppIdentity (linux): только application.ini, без mac-слоёв', async () => {
+test('patchAppIdentity (linux): только application.ini в корне, без mac-слоёв', async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'pbr4-'));
-  mkdirSync(path.join(dir, 'resources'), { recursive: true });
-  writeFileSync(path.join(dir, 'resources', 'application.ini'), '[App]\nName=Zen\nVendor=Mozilla\nProfile=zen\nBuildID=20261029123729\n');
+  writeFileSync(path.join(dir, 'application.ini'), '[App]\nName=Zen\nVendor=Mozilla\nProfile=zen\nBuildID=20261029123729\n');
   await patchAppIdentity(dir, { platform: 'linux' });
-  const ini = readFileSync(path.join(dir, 'resources', 'application.ini'), 'utf8');
+  const ini = readFileSync(path.join(dir, 'application.ini'), 'utf8');
   assert.match(ini, /^Name=Molniya$/m);
   assert.match(ini, /^Profile=molniya$/m);
 });
