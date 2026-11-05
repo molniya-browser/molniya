@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Молния — открытый браузер для рунета</title>
+  <meta name="description" content="Открытый браузер с сертификатами Минцифры из коробки: госсайты без предупреждений, поиск Яндекс, без телеметрии. Пересборка Zen Browser (MPL 2.0).">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+</head>
+<body>
+  <header>
+    <div class="logo"><img src="icon.svg" alt="Молния"> Молния</div>
+    <nav><a href="#pochemu">Почему</a><a href="#skachat">Скачать</a><a href="#faq">Вопросы</a><a href="https://github.com/molniya-browser/molniya">Код</a></nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <h1>Быстрый браузер,<br>которому доверяют рунет</h1>
+      <p class="sub">Красота и скорость Zen Browser. Сертификаты Минцифры — из коробки: госуслуги, банки и госсайты открываются без экранов «соединение не защищено». Открытый код, никакой телеметрии.</p>
+      <div class="dl-buttons" id="dl">
+        <a class="btn primary" id="btn-win" href="https://github.com/molniya-browser/molniya/releases/latest">Скачать для Windows</a>
+        <a class="btn" id="btn-mac" href="https://github.com/molniya-browser/molniya/releases/latest">Скачать для macOS</a>
+        <a class="btn" id="btn-linux" href="https://github.com/molniya-browser/molniya/releases/latest">Скачать для Linux</a>
+      </div>
+      <p class="hint" id="dl-hint">Ваша система определена автоматически</p>
+    </section>
+
+    <section id="pochemu" class="cards">
+      <div class="card"><h3>🛡 Сертификаты из коробки</h3><p>Корень Минцифры уже доверен: госуслуги, ВТБ и тысячи сайтов с российскими сертификатами — без предупреждений и танцев с настройками.</p></div>
+      <div class="card"><h3>📖 Открытый код</h3><p>Весь пайплайн сборки открыт: сами проверьте, что браузер не делает ничего лишнего. Основа — Zen Browser и Mozilla Firefox (MPL 2.0).</p></div>
+      <div class="card"><h3>🚫 Без слежки</h3><p>Никакой телеметрии, экспериментов и отчётов. Защитные проверки (фишинг-листы) включены — мы не жертвуем вашей безопасностью ради лозунга.</p></div>
+    </section>
+
+    <section id="faq" class="faq">
+      <h2>Частые вопросы</h2>
+      <details><summary>Windows показывает «не удалось проверить издателя». Это вирус?</summary>
+        <p>Нет. Мы пока не покупали код-подпись у Microsoft-партнёра — это дорого и требует юрлица. Нажмите «Подробнее» → «Выполнить в любом случае». Когда браузер наберёт аудиторию — подписем сборки.</p></details>
+      <details><summary>macOS: «приложение от неопознанного разработателя»</summary>
+        <p>То же самое: правый клик по Молнии → «Открыть» → «Открыть». Apple берёт $99/год за подпись разработчика — подпись появится по мере роста проекта.</p></details>
+      <details><summary>Что у вас с данными? Куда идёт мой трафик?</summary>
+        <p>Браузер не отправляет ничего о вас: телеметрия, эксперименты и отчёты вырезаны. Включены только защитные проверки — списки фишинговых сайтов и отзыва сертификатов (как у любого браузера). Поиск по умолчанию — Яндекс: как любой поисковик, он видит ваши поисковые запросы; переключить на DuckDuckGo можно в один клик в строке поиска.</p></details>
+      <details><summary>Это форк чего? Кто сделал?</summary>
+        <p>Молния — независимая пересборка открытого <a href="thank-you-zen.html">Zen Browser</a> (движок Firefox). Мы благодарны командам Zen Browser и Mozilla — они сделали 99% работы.</p></details>
+      <details><summary>Как обновляться?</summary>
+        <p>Встроенный индикатор сам покажет баннер, когда выйдет новая версия, со ссылкой на скачивание. Молния не обновляется сама — вы всегда контролируете момент.</p></details>
+      <details><summary>Чем лучше Яндекс.Браузера?</summary>
+        <p>Заявляем честно: это выбор вкуса и доверия. Яндекс закрыт и собирает данные; Молния открыта, минимальна и не звонит домой. Решение за вами.</p></details>
+    </section>
+  </main>
+
+  <footer>
+    <p>Молния — пересборка <a href="thank-you-zen.html">Zen Browser</a> и Mozilla Firefox, лицензия MPL 2.0. Товарные знаки принадлежат их владельцам.</p>
+    <p><a href="https://github.com/molniya-browser/molniya">GitHub</a> · <a href="https://t.me/molniya_browser">Telegram</a></p>
+  </footer>
+  <script src="app.js"></script>
+</body>
+</html>
