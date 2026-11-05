@@ -3,7 +3,7 @@
 // Info.plist + en.lproj/InfoPlist.strings + переименование бинарника (mac).
 // Рецептура: docs/spike-findings-mac.md
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, readdirSync, statSync, renameSync, existsSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, readdirSync, statSync, renameSync, existsSync, mkdirSync, cpSync } from 'node:fs';
 import { writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
@@ -56,7 +56,7 @@ function* walkLocaleFiles(dir) {
  * Патчит ЛОКАЛЬНЫЕ строки в omni.ja (browser): распаковка 7z → sweep → residue-контроль → zip -qrX.
  * @returns {Promise<{replaced: number}>}
  */
-export async function patchOmni(omniPathArg, { workDir } = {}) {
+export async function patchOmni(omniPathArg, { workDir, brandAssets } = {}) {
   const omniPath = path.resolve(omniPathArg); // zip запускается с cwd=дерево: только абсолютный путь
   const tmp = workDir ?? mkdtempSync(path.join(tmpdir(), 'omni-patch-'));
   const tree = path.join(tmp, 'tree');
@@ -64,6 +64,16 @@ export async function patchOmni(omniPathArg, { workDir } = {}) {
   extractOmni(omniPath, tree);
 
   let replaced = 0;
+
+  // Бренд-КАРТИНКИ: wordmark/logo/иконки из каталога ассетов (безусловно — даже если файла в архиве не было)
+  if (brandAssets) {
+    const brandingDir = path.join(tree, 'chrome', 'browser', 'content', 'branding');
+    if (!existsSync(brandingDir)) throw new Error('В omni.ja нет каталога branding — структура изменилась');
+    for (const name of readdirSync(brandAssets)) {
+      cpSync(path.join(brandAssets, name), path.join(brandingDir, name));
+    }
+  }
+
   for (const file of walkLocaleFiles(tree)) {
     let content = await readFile(file, 'utf8');
     if (!/Zen/.test(content)) continue;

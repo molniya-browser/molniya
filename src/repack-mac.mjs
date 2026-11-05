@@ -1,7 +1,7 @@
 // Перепаковка macOS: подпись ad-hoc + DMG + обязательная верификация (Review Focus №5).
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import path from 'node:path';
 
 export function artifactName(os, version) {
@@ -36,6 +36,7 @@ export function repackMac({ appDir, outDir, version }) {
   sh('codesign', ['--verify', '--deep', appDir]);
 
   const dmgPath = path.join(outDir, artifactName('mac', version));
+  rmSync(dmgPath, { force: true }); // hdiutil не перезаписывает существующий файл
   sh('hdiutil', ['create', '-volname', 'Молния', '-srcfolder', appDir, '-fs', 'HFS+', '-format', 'UDZO', dmgPath]);
   const verify = spawnSync('hdiutil', ['verify', dmgPath], { encoding: 'utf8' });
   if (verify.status !== 0) {

@@ -9,9 +9,9 @@ import { patchOmni, patchAppIdentity } from './patch-brand.mjs';
  * distribution + autoconfig + бренд-omni + идентичность приложения.
  */
 export async function patchInstallDir(installDir, opts = {}) {
-  const { platform = 'win' } = opts;
+  const { platform = 'win', brandAssets } = opts;
   await buildDistribution(installDir, opts);
-  const omniRes = await patchOmni(path.join(installDir, 'browser', 'omni.ja'));
+  const omniRes = await patchOmni(path.join(installDir, 'browser', 'omni.ja'), { brandAssets });
   const idRes = await patchAppIdentity(installDir, { platform });
   return { ...omniRes, ...idRes };
 }

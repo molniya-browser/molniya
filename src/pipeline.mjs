@@ -69,7 +69,9 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
 
     const ini = await readFile(path.join(molniyaDir, 'application.ini'), 'utf8');
     const geckoVersion = ini.match(/^Version=(.+)$/m)?.[1] ?? 'unknown';
-    const res = await patchInstallDir(molniyaDir, { zenTag: tagName, platform: 'win' });
+    const res = await patchInstallDir(molniyaDir, {
+      zenTag: tagName, platform: 'win', brandAssets: path.resolve('assets', 'branding'),
+    });
     console.log(`[win] бренд: ${res.replaced} строк, gecko ${geckoVersion}`);
 
     const outDir = CONFIG.paths.dist;
@@ -91,7 +93,9 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
     const srcDir = path.join(linDir, entries[0]); // в архиве один корневой каталог
     const ini = await readFile(path.join(srcDir, 'application.ini'), 'utf8');
     const geckoVersion = ini.match(/^Version=(.+)$/m)?.[1] ?? 'unknown';
-    const res = await patchInstallDir(srcDir, { zenTag: tagName, platform: 'linux' });
+    const res = await patchInstallDir(srcDir, {
+      zenTag: tagName, platform: 'linux', brandAssets: path.resolve('assets', 'branding'),
+    });
     console.log(`[linux] бренд: ${res.replaced} строк, gecko ${geckoVersion}`);
     const outDir = CONFIG.paths.dist;
     mkdirSync(outDir, { recursive: true });
@@ -113,7 +117,9 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
   const dist = await buildDistribution(resources, { zenTag: tagName });
   console.log(`[${os}] distribution: ${dist.files.length} файлов, gecko ${geckoVersion}`);
 
-  const omniRes = await patchOmni(path.join(resources, 'browser', 'omni.ja'));
+  const omniRes = await patchOmni(path.join(resources, 'browser', 'omni.ja'), {
+    brandAssets: path.resolve('assets', 'branding'),
+  });
   const idRes = await patchAppIdentity(contents, { platform: 'mac' });
   const icons = await embedMacIcons(appDir);
   console.log(`[${os}] бренд: ${omniRes.replaced} строк; identity: ${idRes.renamedBinary ? 'бинарник переименован' : '—'}; иконки: ${icons ? 'встроены' : 'нет (Task 12)'}`);
