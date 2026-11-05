@@ -12,6 +12,11 @@ import { repackMac, shaLine, artifactName } from './repack-mac.mjs';
 import { patchInstallDir } from './repack-win.mjs';
 import { repackLinux } from './repack-linux.mjs';
 
+async function writeVersionFile(version) {
+  mkdirSync(CONFIG.paths.dist, { recursive: true });
+  await writeFile(path.join(CONFIG.paths.dist, 'version.txt'), version + '\n');
+}
+
 function sh(cmd, args, opts = {}) {
   const res = spawnSync(cmd, args, { maxBuffer: 64 * 1024 * 1024, ...opts });
   if (res.status !== 0) {
@@ -53,6 +58,7 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
 
   const { assetPath, tagName } = await fetchUpstream({ os, tag, destDir: path.join(workDir, 'upstream') });
   const version = `${tagName}-molniya.1`;
+  await writeVersionFile(version);
   console.log(`[${os}] upstream ${tagName} → ${assetPath}`);
 
   if (os === 'win') {

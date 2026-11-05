@@ -44,6 +44,7 @@ jobs:
             dist/*.dmg
             dist/*.zip
             dist/*.tar.xz
+            dist/version.txt
 
   release:
     needs: build
@@ -61,5 +62,5 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="${{ inputs.zen_tag }}-molniya.${{ inputs.build_n }}"
+          TAG="$(cat dist-all/version.txt | tr -d '\n')"
           gh release create "$TAG" --draft --title "Молния $TAG" --notes "Пересборка Zen Browser (MPL 2.0). Сертификаты Минцифры из коробки." dist-all/*
