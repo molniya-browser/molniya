@@ -10,6 +10,7 @@ import { buildDistribution } from './build-distribution.mjs';
 import { patchOmni, patchAppIdentity } from './patch-brand.mjs';
 import { repackMac, shaLine, artifactName } from './repack-mac.mjs';
 import { patchInstallDir } from './repack-win.mjs';
+import { repackLinux } from './repack-linux.mjs';
 
 function sh(cmd, args, opts = {}) {
   const res = spawnSync(cmd, args, { maxBuffer: 64 * 1024 * 1024, ...opts });
@@ -80,7 +81,27 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
     return { artifactPath: zipPath, version };
   }
 
-  if (os !== 'mac') throw new Error(`Ветка ${os} реализуется в Task 10`);
+  if (os === 'linux') {
+    // tar.xz собирается кросс-платформенно: распаковка → те же патчи → tar -cJf
+    const linDir = path.join(workDir, 'linux');
+    rmSync(linDir, { recursive: true, force: true });
+    mkdirSync(linDir, { recursive: true });
+    sh('tar', ['-xJf', assetPath, '-C', linDir]);
+    const entries = readdirSync(linDir);
+    const srcDir = path.join(linDir, entries[0]); // в архиве один корневой каталог
+    const ini = await readFile(path.join(srcDir, 'application.ini'), 'utf8');
+    const geckoVersion = ini.match(/^Version=(.+)$/m)?.[1] ?? 'unknown';
+    const res = await patchInstallDir(srcDir, { zenTag: tagName, platform: 'linux' });
+    console.log(`[linux] бренд: ${res.replaced} строк, gecko ${geckoVersion}`);
+    const outDir = CONFIG.paths.dist;
+    mkdirSync(outDir, { recursive: true });
+    const tarPath = repackLinux({ srcDir, outDir, version });
+    await appendFile(path.join(outDir, 'SHA256SUMS'), shaLine(tarPath) + '\n');
+    console.log(`[linux] готово: ${tarPath}`);
+    return { artifactPath: tarPath, version };
+  }
+
+  if (os !== 'mac') throw new Error(`Неизвестная платформа: ${os}`);
 
   const appDir = await unpackMac(assetPath, workDir);
   const contents = path.join(appDir, 'Contents');
