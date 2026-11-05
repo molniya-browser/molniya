@@ -1,0 +1,27 @@
+name: pages
+
+# Деплой лендинга molniya-browser.ru (GitHub Pages из landing/)
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    if: ${{ hashFiles('landing/**') != '' }}
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: landing }
+      - id: deployment
+        uses: actions/deploy-pages@v4

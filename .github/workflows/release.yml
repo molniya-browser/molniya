@@ -1,0 +1,62 @@
+name: release
+
+# Ручной запуск: выбор тега Zen + номер сборки Молнии → три артефакта → draft-release.
+on:
+  workflow_dispatch:
+    inputs:
+      zen_tag:
+        description: 'Тег Zen Browser (например, 1.24b) или latest'
+        required: false
+        default: 'latest'
+      build_n:
+        description: 'Номер сборки Молнии (molniya.N)'
+        required: false
+        default: '1'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-14, target: mac }
+          - { os: ubuntu-24.04, target: linux }
+          - { os: ubuntu-24.04, target: win } # ядро win извлекается 7z кросс-платформенно
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - name: Инструменты (linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y p7zip-full xz-utils zip unzip
+      - name: Toolcheck
+        run: npm run toolcheck || true # 7zz на CI может отсутствовать — ставим через apt выше (7z)
+      - name: Пайплайн ${{ matrix.target }}
+        run: npm run pipeline -- --os ${{ matrix.target }} --tag ${{ inputs.zen_tag }}
+      - name: Артефакты
+        uses: actions/upload-artifact@v4
+        with:
+          name: molniya-${{ matrix.target }}
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/*.tar.xz
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: dist-all, merge-multiple: true }
+      - name: SHA256SUMS
+        working-directory: dist-all
+        run: sha256sum *.dmg *.zip *.tar.xz > SHA256SUMS
+      - name: Draft release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ inputs.zen_tag }}-molniya.${{ inputs.build_n }}"
+          gh release create "$TAG" --draft --title "Молния $TAG" --notes "Пересборка Zen Browser (MPL 2.0). Сертификаты Минцифры из коробки." dist-all/*
