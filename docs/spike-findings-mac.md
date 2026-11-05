@@ -28,3 +28,36 @@
 - molniya.cfg: defaultPref-набор из спайка (телеметрия off; safebrowsing on; extensions.update on; app.update off; intl.locale.requested ru; browser.search.region RU).
 - application.ini патчи: Name/Vendor/Profile/RemotingName — точные значения выше.
 - Замены бренда: таблица пар из п.2; генератор патчит ВСЕ локали (82 файла).
+
+---
+
+# РАУНДЫ 2–4: финальная рецептура (всё проверено партнёром в GUI)
+
+## Полный рецепт перепаковки macOS (валидированный)
+
+1. **omni.ja (browser)**: распаковка `7z x` (unzip НЕ работает — мусорные 4 байта перед PK).
+   - Замены бренда: `chrome/*/locale/branding/brand.properties` (4 ключа) + `localization/*/branding/brand.ftl` (5 паттернов) + ШИРОКИЙ SWEEP `\bZen Browser\b`→«Молния», `\bZen\b`→«Молния» по ВСЕМ `.ftl/.dtd/.properties` в `localization/` и `chrome/*/locale/` (82+209 строк; имена файлов zen-*.ftl НЕ трогать).
+   - **Бренд-картинки**: `chrome/browser/content/branding/about-wordmark.svg` (это вектор-пути — заменить файлом), `firefox-wordmark.svg`, `about-logo.svg`, `about-logo*.png`, `icon16/32/48/64/128.png` — заменить на свои (qlmanage -t -s N для растеризации). «Zen Browser» в about-диалоге — это КАРТИНКА-wordmark, не строка!
+   - Запаковка: `zip -qrX` из корня распакованного дерева.
+2. **omni.ja (toolkit)**: `modules/AppConstants.sys.mjs` — вкомпиленные константы: MOZ_APP_NAME→molniya, MOZ_APP_BASENAME→Molniya, MOZ_APP_DISPLAYNAME_DO_NOT_USE→Molniya, MOZ_MACBUNDLE_ID→ru.molniya.browser, MOZ_MACBUNDLE_NAME→«Молния.app».
+3. **application.ini**: Name=Molniya, Vendor=Molniya Project, RemotingName=molniya, Profile=molniya (информативно), **BuildID = своя метка времени на каждый репак** (иначе стартовый кэш профилей переживает смену omni и пользователи видят старые строки!).
+4. **Info.plist**: CFBundleName=«Молния», CFBundleIdentifier=ru.molniya.browser, CFBundleExecutable=molniya (+ переименовать бинарник).
+5. **en.lproj/InfoPlist.strings**: CFBundleName «Zen» → «Молния» — ЭТО источник имени у яблока (локализованное перекрытие сильнее Info.plist!). plutil -convert xml1 перед правкой.
+6. **Иконки приложения**: заменить `Resources/firefox.icns` + `document.icns` (iconutil из iconset; CFBundleIconFile=firefox.icns) и **УДАЛИТЬ `Resources/Assets.car`** — там зеновский AppIcon, который AppKit предпочитает. После замены: `xattr -cr` → codesign → `lsregister -f` → killall Dock.
+7. **Подпись**: `xattr -cr` ПЕРЕД каждым codesign (иначе «detritus not allowed»), затем `codesign -f -s - --deep` + verify.
+8. **DMG**: `hdiutil create -volname Молния -format UDZO` + verify.
+
+## Сертификаты (финальный механизм)
+
+`distribution/Certificates/<имя>.crt` (С ЗАГЛАВНОЙ C) + `policies.json` → `Certificates.Install: ["<голое имя файла>"]`. Поиск из Policies.sys.mjs: `dirs.unshift(XREAppDist)` — первым смотрит `<app>/Contents/Resources/distribution/Certificates/`. Токен `{InstallationDirectory}` на macOS НЕ резолвится, абсолютные пути тоже падают, autoconfig-песочница без Components/ChromeUtils — всё это тупики.
+
+## Профили
+
+US-root `~/Library/Application Support/zen` зашит в XUL (ini игнорируется, бинпоиск TESTNAME/TESTPROF это доказал). V1: общий корень (последовательная работа безопасна, движок один), формальное разделение = дорога А. Кэши профилей чистятся: `find ~/Library/Caches/<root> ~/Library/Application Support/<root> -maxdepth 4 -name startupCache`.
+
+## Dev-инструменты, заработавшие в этом спайке
+
+- **Marionette**: ASCII-фрейминг `<len>:<json>`, обязательно `-no-remote`, сначала `WebDriver:NewSession`; `about:` навигация запрещена в WebDriver-контексте.
+- **OCR-скриншотов**: osascript -l JavaScript + Vision (VNRecognizeTextRequest, initWithURLOptions, topCandidates(1)) — работает с ru-RU.
+- **Пиксельный тест**: screencapture + sips→bmp + подсчёт цветов (молния = жёлтый #ffd447 на тёмно-синем).
+- geckodriver: режет about:-страницы и требует свой профиль — хуже Marionette для наших задач.
