@@ -32,7 +32,10 @@ function api(pathname) {
 }
 
 function curl(args) {
-  const res = spawnSync('curl', ['-sSLf', '--max-time', '600', ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  // GITHUB_TOKEN (CI) снимает rate-limit API у shared-IP раннеров
+  const token = process.env.GITHUB_TOKEN;
+  const auth = token ? ['-H', `Authorization: Bearer ${token}`] : [];
+  const res = spawnSync('curl', ['-sSLf', '--max-time', '600', ...auth, ...args], { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   if (res.status !== 0) {
     throw new Error(`curl ${args.join(' ')} → код ${res.status}: ${res.stderr?.slice(0, 300)}`);
   }
