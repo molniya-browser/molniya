@@ -21,12 +21,12 @@ export const CONFIG = {
     {
       file: 'russian_trusted_root_ca_pem.crt',
       url: 'https://gu-st.ru/content/lending/russian_trusted_root_ca_pem.crt',
-      sha256: '936a43fea6e8e525bcc0f81acd9c3d21b4fc4b9b68acea7906d698005afc6504',
+      sha256: 'e2df503cce7cf5069130618c349695f62bdddb9eb8c189156d027269ae4ae267',
     },
     {
       file: 'russian_trusted_sub_ca_pem.crt',
       url: 'https://gu-st.ru/content/lending/russian_trusted_sub_ca_pem.crt',
-      sha256: 'f0ae589f36774f29ef3648f7984b08d42fcce6f1ffeeb6236d773daeb2744ea6',
+      sha256: 'e2df503cce7cf5069130618c349695f62bdddb9eb8c189156d027269ae4ae267',
     },
   ],
   search: {
