@@ -1,0 +1,25 @@
+{
+  "manifest_version": 2,
+  "name": "Молния: детектор обновлений",
+  "version": "1.0.0",
+  "description": "Раз в день проверяет GitHub Releases Молнии и сообщает о новой версии.",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "update-detector@molniya.browser",
+      "strict_min_version": "115.0"
+    }
+  },
+  "permissions": ["storage", "alarms", "notifications"],
+  "host_permissions": ["https://api.github.com/*"],
+  "background": {
+    "scripts": ["background.js"],
+    "persistent": false
+  },
+  "browser_action": {
+    "default_title": "Молния: обновления"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  }
+}
