@@ -34,6 +34,16 @@ function sh(cmd, args, opts = {}) {
   return res.stdout;
 }
 
+// omni.ja Zena: 4 мусорных байта перед PK → 7z ругается на заголовки (exit 2), но распаковывает
+// полностью (проверено спайком: 13 597 файлов, рабочее приложение). Терпим код, проверяем содержимое.
+function extractOmni(omniPath, tree) {
+  const res = spawnSync('7z', ['x', '-y', `-o${tree}`, omniPath], { maxBuffer: 256 * 1024 * 1024 });
+  const looksComplete = ['chrome.manifest', 'chrome', 'modules'].some((m) => existsSync(path.join(tree, m)));
+  if (!looksComplete) {
+    throw new Error(`7z x ${omniPath} → ${res.status}: ${String(res.stderr ?? '').slice(0, 300)} (архив не распакован)`);
+  }
+}
+
 function* walkLocaleFiles(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     const p = path.join(dir, entry.name);
@@ -46,11 +56,12 @@ function* walkLocaleFiles(dir) {
  * Патчит ЛОКАЛЬНЫЕ строки в omni.ja (browser): распаковка 7z → sweep → residue-контроль → zip -qrX.
  * @returns {Promise<{replaced: number}>}
  */
-export async function patchOmni(omniPath, { workDir } = {}) {
+export async function patchOmni(omniPathArg, { workDir } = {}) {
+  const omniPath = path.resolve(omniPathArg); // zip запускается с cwd=дерево: только абсолютный путь
   const tmp = workDir ?? mkdtempSync(path.join(tmpdir(), 'omni-patch-'));
   const tree = path.join(tmp, 'tree');
   mkdirSync(tree, { recursive: true });
-  sh('7z', ['x', '-y', `-o${tree}`, omniPath]);
+  extractOmni(omniPath, tree);
 
   let replaced = 0;
   for (const file of walkLocaleFiles(tree)) {
@@ -95,10 +106,11 @@ const TK_CONSTANTS = [
   [/MOZ_MACBUNDLE_NAME: "Zen\.app"/g, 'MOZ_MACBUNDLE_NAME: "Молния.app"'],
 ];
 
-async function patchToolkitOmni(omniPath, tmp) {
+async function patchToolkitOmni(omniPathArg, tmp) {
+  const omniPath = path.resolve(omniPathArg);
   const tree = path.join(tmp, 'tk-tree');
   mkdirSync(tree, { recursive: true });
-  sh('7z', ['x', '-y', `-o${tree}`, omniPath]);
+  extractOmni(omniPath, tree);
   const acPath = path.join(tree, 'modules', 'AppConstants.sys.mjs');
   let ac = await readFile(acPath, 'utf8');
   for (const [re, to] of TK_CONSTANTS) ac = ac.replace(re, to);
