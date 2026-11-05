@@ -1,0 +1,15 @@
+{
+  "name": "molniya",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Молния — пересборка Zen Browser для рунета: сертификаты Минцифры из коробки, без телеметрии",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/",
+    "toolcheck": "node scripts/toolcheck.mjs",
+    "pipeline": "node src/pipeline.mjs"
+  }
+}
