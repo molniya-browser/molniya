@@ -112,6 +112,22 @@ export function aboutDialogOverrides(content, ru) {
   return content;
 }
 
+// Дефолтные имена пространств Zen → русские (идемпотентно)
+const SPACE_NAME_PATCHES = [
+  ['name = "Space",', 'name = "Личное",'],
+  ['createAndSaveWorkspace("Space", undefined', 'createAndSaveWorkspace("Личное", undefined'],
+  ['"Default";', '"Личное";'],
+  ['? "Incognito" : label;', '? "Приватное" : label;'],
+];
+
+function patchSpaceNames(tree) {
+  const mgr = path.join(tree, 'modules', 'zen', 'ZenSpaceManager.mjs');
+  if (!existsSync(mgr)) return;
+  let s = readFileSync(mgr, 'utf8');
+  for (const [from, to] of SPACE_NAME_PATCHES) s = s.replaceAll(from, to);
+  writeFileSync(mgr, s, 'utf8');
+}
+
 /**
  * Патчит ЛОКАЛЬНЫЕ строки в omni.ja (browser): распаковка 7z → sweep → residue-контроль → zip -qrX.
  * @returns {Promise<{replaced: number}>}
@@ -139,6 +155,9 @@ export async function patchOmni(omniPathArg, { workDir, brandAssets, version } =
     const bjs = path.join(tree, 'chrome', 'browser', 'content', 'browser', 'browser.js');
     if (existsSync(bjs)) injectUpdateDetector(bjs, version);
   }
+
+  // Дефолтные имена пространств — по-русски («Личное», «Приватное»)
+  patchSpaceNames(tree);
 
   for (const file of walkLocaleFiles(tree)) {
     let content = await readFile(file, 'utf8');
