@@ -21,10 +21,10 @@ npm run pipeline -- --os mac --tag latest  # сборка → dist/ (долго,
 ```
 src/                  — скрипты пересборки; все константы — в src/config.mjs
 detector-extension/   — встроенное расширение-детектор обновлений
-landing/              — сайт molniya-browser.ru (GitHub Pages)
+landing/              — сайт molniya-browser.ru (деплой на VPS из CI)
 assets/branding/      — брендовые картинки для браузера
 tests/                — тесты node:test
-.github/workflows/    — CI: release и pages
+.github/workflows/    — CI: release и деплой лендинга
 ```
 
 ## Как выходит релиз

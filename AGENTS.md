@@ -24,7 +24,7 @@
 - Для macOS дополнительно: `hdiutil`, `codesign`, `iconutil`; тесты macOS-идентичности используют также `plutil`.
 - Детектор обновлений — Firefox WebExtension Manifest V2 на vanilla JavaScript.
 - Лендинг — статические HTML/CSS/JavaScript без сборщика и фреймворков.
-- CI и публикация — GitHub Actions, GitHub Releases и GitHub Pages.
+- CI и публикация — GitHub Actions и GitHub Releases; лендинг деплоится на VPS с Caddy (rsync по SSH).
 
 На macOS недостающий `7z` обычно устанавливается через `brew install p7zip`. Полный локальный пайплайн рассчитан на macOS: Windows- и Linux-артефакты там собираются кросс-платформенно, а macOS-артефакт требует системных утилит Apple.
 
@@ -41,11 +41,11 @@
 - `src/repack-linux.mjs` — переименование Linux-запускателя/корневого каталога и создание `tar.xz`.
 - `src/pipeline.mjs` — CLI и оркестратор полного процесса: fetch → unpack → distribution → brand/identity → repack → checksum.
 - `detector-extension/` — встроенное MV2-расширение. `lib/version.js` содержит чистую логику разбора и сравнения версий; `background.js` проверяет GitHub Releases при старте и раз в сутки, показывает бейдж/уведомление; `options.*` управляют включением проверок.
-- `landing/` — сайт `molniya-browser.ru`: `index.html`, `thank-you-zen.html`, `style.css`, `app.js`, `CNAME` и иконка. Кнопки ведут на общий `releases/latest`, а `app.js` подсвечивает вероятную ОС пользователя.
+- `landing/` — сайт `molniya-browser.ru`: `index.html`, `thank-you-zen.html`, `style.css`, `app.js` и иконка. Кнопки ведут на общий `releases/latest`, а `app.js` подсвечивает вероятную ОС пользователя.
 - `assets/branding/` — готовые SVG/PNG, копируемые в browser `omni.ja`; `assets/molniya.icns` — иконки macOS-бандла. `assets/candidates/` и `design/` — исходные/альтернативные дизайн-материалы, не часть runtime.
 - `scripts/toolcheck.mjs` — проверка внешних программ; `scripts/check-links.mjs` — извлечение и HTTP HEAD-проверка внешних ссылок лендинга.
 - `tests/` — тесты `node:test` с фикстурами во временных каталогах.
-- `.github/workflows/release.yml` — ручная сборка и draft release; `.github/workflows/pages.yml` — публикация лендинга.
+- `.github/workflows/release.yml` — ручная сборка и draft release; `.github/workflows/landing-deploy.yml` — деплой лендинга на VPS.
 - `docs/spike-findings-mac.md` — наиболее подробная проверенная рецептура перепаковки; `docs/release-checklist.md` — обязательная ручная приёмка.
 - `docs/superpowers/specs/` и `docs/superpowers/plans/` — исходный замысел и исторический план. Они полезны для контекста, но местами расходятся с текущей реализацией; при конфликте ориентируйтесь на код, README и финальные разделы spike-findings.
 - `work/` и `dist/` — генерируемые и игнорируемые Git каталоги. Не редактируйте их содержимое как исходный код и не коммитьте артефакты.
@@ -158,7 +158,7 @@ Workflow `release` запускается вручную (`workflow_dispatch`) �
 
 После успешной матрицы и ручной приёмки draft публикуется человеком. Обновление uBlock выполняется вручную: проверить новый XPI, затем обновить `version` и `sha256` в `src/config.mjs`.
 
-Workflow `pages` публикует каталог `landing/` в GitHub Pages при push в `main` и при ручном запуске. `landing/CNAME` закрепляет домен `molniya-browser.ru`; отдельной серверной части у сайта нет.
+Workflow `landing-deploy` синхронизирует каталог `landing/` на VPS `46.19.68.175` (Caddy, корень `/var/www/molniya-browser.ru`) через rsync при push в `main` с изменениями в лендинге и при ручном запуске. Подключение идёт пользователем `deploy` с ключом из секрета `VPS_DEPLOY_KEY`; ключ ограничен на сервере принудительной командой `rrsync` и может только записывать файлы сайта. После синхронизации workflow проверяет, что `https://molniya-browser.ru` отвечает 200. Локальный rsync macOS (openrsync) несовместим с `rrsync` — синхронизацию проверяйте GNU rsync (Linux/CI).
 
 ## Текущие ограничения
 

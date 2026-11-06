@@ -1,0 +1,47 @@
+name: landing-deploy
+
+# Деплой лендинга molniya-browser.ru на VPS: rsync в /var/www/molniya-browser.ru,
+# где их раздаёт Caddy. Пользователь deploy ограничен на сервере принудительной
+# командой rrsync, поэтому ключ из секрета VPS_DEPLOY_KEY может только записывать
+# файлы сайта. Локальный rsync macOS (openrsync) с rrsync несовместим — проверять
+# синхронизацию нужно GNU rsync (Linux, CI).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'landing/**'
+      - '.github/workflows/landing-deploy.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: landing-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Настроить SSH-ключ и known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          install -m 600 /dev/null ~/.ssh/id_ed25519
+          printf '%s\n' "${{ secrets.VPS_DEPLOY_KEY }}" > ~/.ssh/id_ed25519
+          printf '%s\n' '46.19.68.175 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGJQUBVQ0ZvwRaPKF+AtmmAGe4/lBnu33ucNZqqGuViT' > ~/.ssh/known_hosts
+
+      - name: Синхронизировать landing/ на VPS
+        run: rsync -az --delete -e 'ssh -o IdentitiesOnly=yes' landing/ deploy@46.19.68.175:/
+
+      - name: Проверить, что сайт отвечает
+        run: |
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 https://molniya-browser.ru/) || true
+            [ "$code" = 200 ] && echo "сайт отвечает 200" && exit 0
+            sleep 5
+          done
+          echo "https://molniya-browser.ru не отвечает 200" >&2
+          exit 1
