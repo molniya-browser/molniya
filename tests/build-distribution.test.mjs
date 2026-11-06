@@ -1,18 +1,30 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, existsSync, readdirSync } from 'node:fs';
+import { mkdtempSync, readFileSync, existsSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 import { buildDistribution } from '../src/build-distribution.mjs';
 import { createHash } from 'node:crypto';
 
 const fakeCert = Buffer.from('-----BEGIN CERTIFICATE-----\nFAKE\n-----END CERTIFICATE-----\n');
 const fakeSha = createHash('sha256').update(fakeCert).digest('hex');
-const fakeXpi = Buffer.from('PK-fake-xpi');
+
+// настоящий мини-XPI: Firefox сверяет имя файла с gecko.id манифеста
+function miniXpi(id) {
+  const dir = mkdtempSync(path.join(tmpdir(), 'xpi-'));
+  writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({
+    name: 'test', version: '1', manifest_version: 2,
+    browser_specific_settings: { gecko: { id } },
+  }));
+  const z = path.join(dir, 'a.xpi');
+  spawnSync('zip', ['-qrX', z, 'manifest.json'], { cwd: dir });
+  return readFileSync(z);
+}
+const fakeXpi = miniXpi('test@molniya');
 
 const baseOpts = (root) => ({
   zenTag: '1.24b',
-  detectorDir: 'detector-extension',
   downloads: {
     cert: async () => fakeCert,
     ublock: async () => fakeXpi,
@@ -22,7 +34,7 @@ const baseOpts = (root) => ({
     { file: 'russian_trusted_root_ca_pem.crt', url: 'u1', sha256: fakeSha },
     { file: 'russian_trusted_sub_ca_pem.crt', url: 'u2', sha256: fakeSha },
   ],
-  ublock: { url: 'u3', version: '1.63.2', sha256: createHash('sha256').update(fakeXpi).digest('hex') },
+  ublock: { url: 'u3', version: '1.63.2', id: 'test@molniya', sha256: createHash('sha256').update(fakeXpi).digest('hex') },
 });
 
 test('policies.json: сертификаты голыми именами, Certificates/ с заглавной, весь disable-набор', async () => {
@@ -86,7 +98,7 @@ test('autoconfig.js и distribution.ini на месте, uBlock упакован
   assert.match(ini, /Zen Browser/); // атрибуция обязательна
   const extDir = path.join(root, 'distribution', 'extensions');
   const exts = readdirSync(extDir);
-  assert.ok(exts.includes('ublock-origin@molniya.xpi'));
+  assert.ok(exts.includes('test@molniya.xpi'), 'имя файла = внутреннему ID расширения');
   assert.ok(res.files.length >= 5);
 });
 
@@ -95,4 +107,14 @@ test('подмена сертификата на сервере валит ге�
   const opts = baseOpts(root);
   opts.downloads.cert = async () => Buffer.from('EVIL');
   await assert.rejects(() => buildDistribution(root, opts));
+});
+
+
+test('XPI с чужим внутренним ID валит сборку (fail-fast)', async () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'dist-id-'));
+  const opts = baseOpts(root);
+  const alien = miniXpi('alien@example.com');
+  opts.downloads.ublock = async () => alien;
+  opts.ublock.sha256 = createHash('sha256').update(alien).digest('hex');
+  await assert.rejects(() => buildDistribution(root, opts), /ID/);
 });

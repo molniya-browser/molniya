@@ -174,12 +174,16 @@ test('patchAppIdentity (win): zen.exe переименовывается в moln
   const { patchAppIdentity } = await import('../src/patch-brand.mjs');
   const dir = mkdtempSync(path.join(tmpdir(), 'wpe-id-'));
   writeFileSync(path.join(dir, 'application.ini'), '[App]\nVendor=Mozilla\nName=Zen\nProfile=zen\nBuildID=20261029123729\n');
+  writeFileSync(path.join(dir, 'platform.ini'), '[Build]\nVersion=159.0\nBuildID=20261029123729\n');
   writeFileSync(path.join(dir, 'zen.exe'), 'stub');
   const res = await patchAppIdentity(dir, { platform: 'win' });
   assert.ok(existsSync(path.join(dir, 'molniya.exe')), 'должен появиться molniya.exe');
   assert.ok(!existsSync(path.join(dir, 'zen.exe')), 'zen.exe должен исчезнуть');
   assert.equal(res.renamedBinary, true);
   assert.match(readFileSync(path.join(dir, 'application.ini'), 'utf8'), /^Name=Molniya$/m);
+  // platform.ini пачтим тоже: по его BuildID валидируется startup-кэш скриптов
+  const platBuild = readFileSync(path.join(dir, 'platform.ini'), 'utf8').match(/^BuildID=(.+)$/m)?.[1];
+  assert.ok(/^20\d{12}$/.test(platBuild) && platBuild !== '20261029123729', 'BuildID platform.ini должен смениться');
 });
 
 test('buildBmpFrame: повторяет раскладки слотов реального zen.exe (маска 16Б/строку и без маски)', () => {

@@ -9,7 +9,14 @@ import { patchInstallDir } from '../src/repack-win.mjs';
 
 const fakeCert = Buffer.from('-----BEGIN CERTIFICATE-----\nFAKE\n-----END CERTIFICATE-----\n');
 const fakeSha = createHash('sha256').update(fakeCert).digest('hex');
-const fakeXpi = Buffer.from('PK');
+// настоящий мини-XPI: buildDistribution сверяет имя файла с gecko.id
+const xpiDir = mkdtempSync(path.join(tmpdir(), 'xpi-'));
+writeFileSync(path.join(xpiDir, 'manifest.json'), JSON.stringify({
+  name: 'test', version: '1', manifest_version: 2,
+  browser_specific_settings: { gecko: { id: 'test@molniya' } },
+}));
+spawnSync('zip', ['-qrX', path.join(xpiDir, 'a.xpi'), 'manifest.json'], { cwd: xpiDir });
+const fakeXpi = readFileSync(path.join(xpiDir, 'a.xpi'));
 
 function zipFixture(dir, files) {
   const tree = path.join(dir, 'f-tree');
@@ -37,7 +44,7 @@ test('patchInstallDir: бренд+identity+cfg+distribution на каталог�
     platform: 'win',
     downloads: { cert: async () => fakeCert, ublock: async () => fakeXpi },
     certs: [{ file: 'r.crt', url: 'u', sha256: fakeSha }, { file: 's.crt', url: 'u', sha256: fakeSha }],
-    ublock: { url: 'u', version: '1', sha256: createHash('sha256').update(fakeXpi).digest('hex') },
+    ublock: { url: 'u', version: '1', id: 'test@molniya', sha256: createHash('sha256').update(fakeXpi).digest('hex') },
   });
 
   const readFromZip = (z, rel) => spawnSync('7z', ['x', '-so', z, rel], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }).stdout;
@@ -93,7 +100,7 @@ test('patchInstallDir: exe Windows получают иконки/версию М
     brandAssets: iconDir,
     downloads: { cert: async () => fakeCert, ublock: async () => fakeXpi },
     certs: [{ file: 'r.crt', url: 'u', sha256: fakeSha }, { file: 's.crt', url: 'u', sha256: fakeSha }],
-    ublock: { url: 'u', version: '1', sha256: createHash('sha256').update(fakeXpi).digest('hex') },
+    ublock: { url: 'u', version: '1', id: 'test@molniya', sha256: createHash('sha256').update(fakeXpi).digest('hex') },
   });
 
   assert.ok(!existsSync(path.join(dir, 'zen.exe')), 'zen.exe должен быть переименован');

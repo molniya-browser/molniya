@@ -8,6 +8,7 @@ import { writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
 import { CONFIG } from './config.mjs';
+import { molniyaIsNewer } from './detector-version.mjs';
 
 export class BrandResidueError extends Error {
   constructor(file) {
@@ -29,36 +30,88 @@ const SWEEP = [
 ];
 
 export const DETECTOR_MARKER = 'MOLNIYA-UPDATE-DETECTOR';
+export const ABOUT_STATUS_MARKER = 'MOLNIYA-ABOUT-UPDATE-STATUS';
+
+/**
+ * Статус обновлений в «О Молнии»: вместо статичного текста «обновления отключены»
+ * показывает «Доступна версия X» со ссылкой на релиз или «У вас последняя версия»
+ * по префу molniya.updates.latestTag, который пишет детектор в browser.js.
+ * Идемпотентен: перезаписывает существующий блок, не дублируя.
+ */
+export function injectAboutUpdateStatus(aboutDialogJsPath, version) {
+  const code = `
+// ==== ${ABOUT_STATUS_MARKER} (встроено пайплайном Молнии; не редактировать вручную) ====
+try {
+  const MOLNIYA_VERSION = ${JSON.stringify(version)};
+  ${molniyaIsNewer.toString()}
+  const molniyaStatus = document.getElementById("policyDisabled");
+  if (molniyaStatus) {
+    const tag = Services.prefs.getStringPref("molniya.updates.latestTag", "");
+    if (tag && molniyaIsNewer(MOLNIYA_VERSION, tag)) {
+      molniyaStatus.removeAttribute("data-l10n-id");
+      molniyaStatus.textContent = "Доступна версия " + tag + ". ";
+      // готовый text-link из downloadFailed: распарсен браузером с is="text-link"
+      // (createXULElement с {is} апгрейд не запускает — ссылка выходит без стиля)
+      const link = document.getElementById("failedLink");
+      if (link) {
+        link.removeAttribute("data-l10n-name");
+        link.setAttribute("href", "https://github.com/molniya-browser/molniya/releases");
+        link.textContent = "Открыть страницу релизов";
+        molniyaStatus.appendChild(link);
+      }
+    } else if (tag) {
+      molniyaStatus.removeAttribute("data-l10n-id");
+      molniyaStatus.textContent = "У вас последняя версия.";
+    }
+    // тег ещё неизвестен (первая проверка не прошла) — остаётся текст из FTL
+  }
+} catch (e) { console.error("molniya about status failed:", e); }
+// ==== конец ${ABOUT_STATUS_MARKER} ====
+`;
+  let src = readFileSync(aboutDialogJsPath, 'utf8');
+  const re = new RegExp(`\\n?// ==== ${ABOUT_STATUS_MARKER}[\\s\\S]*?// ==== конец ${ABOUT_STATUS_MARKER} ====\\n?`, 'g');
+  src = src.replace(re, '\n');
+  writeFileSync(aboutDialogJsPath, src + code, 'utf8');
+}
 
 /**
  * Встраивает детектор обновлений прямо в browser.js (chrome-привилегии, без подписи —
  * распределённые xpi без подписи release-Firefox молча отвергает, uBlock проходит как AMO-подписанный).
- * Идемпотентен: перезаписывает существующий блок, не дублируя.
+ * Системные уведомления не используются: ad-hoc сборки macOS их молча теряют,
+ * поэтому при новой версии открывается вкладка с релизом. Преф подавления пишется
+ * только после успешного открытия вкладки. Идемпотентен: перезаписывает блок, не дублируя.
  */
 export function injectUpdateDetector(browserJsPath, version) {
   const code = `
 // ==== ${DETECTOR_MARKER} (встроено пайплайном Молнии; не редактировать вручную) ====
 try {
-  const MCc = Components.classes, MCi = Components.interfaces;
   const MOLNIYA_VERSION = ${JSON.stringify(version)};
   const MOLNIYA_API = "https://api.github.com/repos/molniya-browser/molniya/releases/latest";
-  const MOLNIYA_URL = "https://github.com/molniya-browser/molniya/releases/latest";
+  const MOLNIYA_TAG_URL = (tag) => "https://github.com/molniya-browser/molniya/releases/tag/" + tag;
+  ${molniyaIsNewer.toString()}
   const molniyaCheck = async () => {
     try {
+      // одна проверка на запуск браузера: таймеры всех окон гасят друг друга
+      const lastCheck = Services.prefs.getIntPref("molniya.updates.lastCheck", 0);
+      if (Date.now() / 1000 - lastCheck < 60) return; // lastCheck в секундах: char-префы 32-битные
+      Services.prefs.setIntPref("molniya.updates.lastCheck", Math.floor(Date.now() / 1000));
       if (Services.prefs.getPrefType("molniya.updates.enabled") &&
           !Services.prefs.getBoolPref("molniya.updates.enabled")) return;
       const res = await fetch(MOLNIYA_API, { headers: { Accept: "application/vnd.github+json" } });
       if (!res.ok) return;
       const tag = ((await res.json()) || {}).tag_name || "";
-      if (!tag || tag === MOLNIYA_VERSION) return;
+      if (!tag) return;
+      // последний известный релиз — для статуса в «О Молнии»
+      Services.prefs.setStringPref("molniya.updates.latestTag", tag);
+      // предлагаем только настоящее обновление: тег новее текущей версии
+      if (!molniyaIsNewer(MOLNIYA_VERSION, tag)) return;
       if (Services.prefs.getStringPref("molniya.updates.notifiedVersion", "") === tag) return;
+      // вкладка — в самое свежее окно, чтобы не пряталась в фоновом workspace
+      const win = Services.wm.getMostRecentBrowserWindow();
+      if (!win) return;
+      win.openTrustedLinkIn(MOLNIYA_TAG_URL(tag), "tab");
       Services.prefs.setStringPref("molniya.updates.notifiedVersion", tag);
-      const alerts = MCc["@mozilla.org/alerts-service;1"].getService(MCi.nsIAlertsService);
-      alerts.showAlertNotification(null, "Молния",
-        "Доступна версия " + tag + ". Открыть страницу скачивания?",
-        true, "molniya-update",
-        (sb, topic) => { if (topic === "alertclickcallback") openTrustedLinkIn(MOLNIYA_URL, "tab"); });
-    } catch (e) {}
+    } catch (e) { console.error("molniya update check failed:", e); }
   };
   setTimeout(molniyaCheck, 20000);
   setInterval(molniyaCheck, 24 * 60 * 60 * 1000);
@@ -205,10 +258,13 @@ export async function patchOmni(omniPathArg, { workDir, brandAssets, version } =
     }
   }
 
-  // Детектор обновлений — встроенный код браузера (без подписи, chrome-привилегии)
+  // Детектор обновлений — встроенный код браузера (без подписи, chrome-привилегии);
+  // статус «доступна новая версия» — в «О Молнии»
   if (version) {
     const bjs = path.join(tree, 'chrome', 'browser', 'content', 'browser', 'browser.js');
     if (existsSync(bjs)) injectUpdateDetector(bjs, version);
+    const aboutJs = path.join(tree, 'chrome', 'browser', 'content', 'browser', 'aboutDialog.js');
+    if (existsSync(aboutJs)) injectAboutUpdateStatus(aboutJs, version);
   }
 
   // Дефолтные имена пространств — по-русски («Личное», «Приватное»)
@@ -297,6 +353,15 @@ export async function patchAppIdentity(contentsDir, { platform } = {}) {
       let ini = await readFile(iniPath, 'utf8');
       for (const [re, to] of APP_INI) ini = ini.replace(re, to);
       await writeFile(iniPath, ini, 'utf8');
+    }
+    // platform.ini пачтится ради BuildID: по нему валидируется startup-кэш скриптов,
+    // без бампа браузер вечно исполняет browser.js из первой сборки на профиле
+    const platPath = path.join(resources, 'platform.ini');
+    if (existsSync(platPath)) {
+      const buildIdLine = APP_INI.find(([re]) => re.source.startsWith('^BuildID'))[1];
+      let plat = await readFile(platPath, 'utf8');
+      plat = plat.replace(/^BuildID=.*$/m, buildIdLine);
+      await writeFile(platPath, plat, 'utf8');
     }
     const tkOmni = path.join(resources, 'omni.ja');
     if (existsSync(tkOmni)) await patchToolkitOmni(tkOmni, tmp);

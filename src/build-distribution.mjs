@@ -89,13 +89,29 @@ function defaultDownload(url) {
 
 /**
  * @param {string} root каталог установки (на mac = .app/Contents/Resources; win/linux = корень установки)
- * @param {object} opts {zenTag, detectorDir, downloads:{cert,ublock}, certs, ublock}
+ * @param {object} opts {zenTag, downloads:{cert,ublock}, certs, ublock}
  * @returns {Promise<{files: string[]}>}
  */
+/** Читает browser_specific_settings.gecko.id (или applications.gecko.id) из манифеста XPI. */
+async function xpiGeckoId(buf) {
+  const { mkdtempSync, rmSync } = await import('node:fs');
+    const { tmpdir } = await import('node:os');
+  const tmp = mkdtempSync(path.join(tmpdir(), 'xpi-'));
+  try {
+    const xpiPath = path.join(tmp, 'addon.xpi');
+    await writeFile(xpiPath, buf);
+    const res = spawnSync('7z', ['x', '-so', xpiPath, 'manifest.json'], { maxBuffer: 8 * 1024 * 1024 });
+    if (res.status !== 0) throw new Error(`не удалось прочитать manifest.json из XPI (7z → ${res.status})`);
+    const manifest = JSON.parse(res.stdout.toString('utf8'));
+    return manifest.browser_specific_settings?.gecko?.id ?? manifest.applications?.gecko?.id ?? null;
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 export async function buildDistribution(root, opts = {}) {
   const {
     zenTag,
-    detectorDir = 'detector-extension',
     downloads = {},
     certs = CONFIG.certs,
     ublock = CONFIG.extensions.ublock,
@@ -130,7 +146,13 @@ export async function buildDistribution(root, opts = {}) {
   if (ublock.sha256 && ublockActual !== String(ublock.sha256).toLowerCase()) {
     throw new CertPinError('ublock-origin.xpi', ublock.sha256, ublockActual);
   }
-  const ublockPath = path.join(extDir, 'ublock-origin@molniya.xpi');
+  // Firefox ставит distribution-аддон только если имя файла = внутреннему ID
+  // расширения; сверяем манифест с ожидаемым ID (fail-fast, а не молчащий провал)
+  const manifestId = await xpiGeckoId(ublockBuf);
+  if (manifestId !== ublock.id) {
+    throw new Error(`uBlock: ID манифеста «${manifestId}» ≠ ожидаемому «${ublock.id}» — файл будет назван неправильно`);
+  }
+  const ublockPath = path.join(extDir, `${ublock.id}.xpi`);
   await writeFile(ublockPath, ublockBuf);
   written.push(ublockPath);
 

@@ -38,6 +38,8 @@ export const CONFIG = {
     ublock: {
       url: 'https://addons.mozilla.org/firefox/downloads/latest/ublock-origin/addon-607454-latest.xpi',
       version: '1.75.4', // обновляется вручную по чек-листу релиза
+      // внутренний ID расширения: Firefox требует, чтобы имя distribution-XPI совпадало с ним
+      id: 'uBlock0@raymondhill.net',
       sha256: 'e2df503cce7cf5069130618c349695f62bdddb9eb8c189156d027269ae4ae267',
     },
   },
