@@ -71,7 +71,7 @@ pref("general.config.obscure_value", 0);
 const DISTRIBUTION_INI = `[Global]
 id=molniya
 version=1.0.0
-about=Молния — пересборка Zen Browser (MPL 2.0). Zen Browser и Mozilla — авторы базового кода.
+about=Пересборка Zen Browser и Mozilla (MPL 2.0)
 [Preferences]
 intl.locale.requested=ru
 `;
