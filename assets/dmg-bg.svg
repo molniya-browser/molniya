@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 420">
+  <rect width="700" height="420" fill="#14141f"/>
+  <circle cx="590" cy="90" r="46" fill="none" stroke="#2d2d44" stroke-width="2"/>
+  <path d="M602 60 L578 96 H594 L578 128 L618 86 H600 Z" fill="#ffd447" opacity="0.9"/>
+  <text x="60" y="86" font-family="-apple-system, sans-serif" font-size="34" font-weight="700" fill="#edf2f4">Установка Молнии</text>
+  <text x="60" y="130" font-family="-apple-system, sans-serif" font-size="19" fill="#8d99ae">Перетащите Молнию в папку «Программы»</text>
+  <path d="M405 205 L275 205" stroke="#ffd447" stroke-width="6" stroke-linecap="round"/>
+  <path d="M292 188 L268 205 L292 222 Z" fill="#ffd447"/>
+  <text x="60" y="330" font-family="-apple-system, sans-serif" font-size="15" fill="#8d99ae">Открытый браузер для рунета · сертификаты Минцифры из коробки</text>
+  <text x="60" y="356" font-family="-apple-system, sans-serif" font-size="15" fill="#8d99ae">molniya-browser.ru</text>
+</svg>

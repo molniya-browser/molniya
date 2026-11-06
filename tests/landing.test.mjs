@@ -50,7 +50,7 @@ test('detectPlatform: отличает desktop ОС и не принимает i
 
 test('медиаслоты используют локальные MP4 с тихим зацикленным воспроизведением', () => {
   const videos = {
-    hero: 'demo-main.mp4',
+    hero: 'new-main.mp4',
     workspaces: 'spaces.mp4',
     compact: 'full-screen.mp4',
     glance: 'link-preview.mp4',

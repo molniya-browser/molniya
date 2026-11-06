@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync, mkdtempSync } from 'node:fs';
+import { writeFileSync, mkdtempSync, existsSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
@@ -20,4 +21,15 @@ test('sha256sum: считает хеш файла; shaLine формирует с
   const expected = createHash('sha256').update(data).digest('hex');
   assert.equal(sha256sum(f), expected);
   assert.equal(shaLine(f), `${expected}  ${path.basename(f)}`);
+});
+
+test('stageDmgContents: приложение + ярлык «Программы» + фон, style:false без Finder', async () => {
+  const { stageDmgContents } = await import('../src/repack-mac.mjs');
+  const work = mkdtempSync(path.join(tmpdir(), 'stage-'));
+  const app = path.join(work, 'Молния.app');
+  execSync(`mkdir -p "${app}/Contents/MacOS" && printf x > "${app}/Contents/MacOS/molniya"`);
+  const staging = stageDmgContents(app, work, { style: false });
+  assert.ok(existsSync(path.join(staging, 'Молния.app')));
+  assert.ok(existsSync(path.join(staging, 'Программы')), 'ярлык на /Applications');
+  assert.ok(existsSync(path.join(staging, '.background', 'bg.png')), 'фон с подсказкой');
 });
