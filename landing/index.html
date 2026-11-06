@@ -3,56 +3,168 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Молния — открытый браузер для рунета</title>
-  <meta name="description" content="Открытый браузер с сертификатами Минцифры из коробки: госсайты без предупреждений, поиск Яндекс, без телеметрии. Пересборка Zen Browser (MPL 2.0).">
+  <title>Молния - Zen Browser для рунета</title>
+  <meta name="description" content="Красивый и приватный Zen Browser с сертификатами Минцифры, русской локалью, Яндексом и uBlock Origin. Всё нужное уже настроено.">
+  <meta name="theme-color" content="#191919">
+  <meta property="og:title" content="Молния - интернет без барьеров">
+  <meta property="og:description" content="Zen Browser с сертификатами Минцифры. Красивый, приватный и готовый к российским сайтам.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="molniya-512.png">
   <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="molniya-512.png" type="image/png">
 </head>
 <body>
-  <header>
-    <div class="logo"><img src="icon.svg" alt="Молния"> Молния</div>
-    <nav><a href="#pochemu">Почему</a><a href="#skachat">Скачать</a><a href="#faq">Вопросы</a><a href="https://github.com/molniya-browser/molniya">Код</a></nav>
+  <a class="skip-link" href="#content">Перейти к содержанию</a>
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="Молния - на начало страницы">
+      <img src="molniya-512.png" alt="" width="40" height="40">
+      <span>Молния</span>
+    </a>
+    <nav class="main-nav" aria-label="Основная навигация">
+      <a href="#features">Возможности</a>
+      <a href="#values">О проекте</a>
+      <a href="#faq">Вопросы</a>
+    </nav>
+    <a class="button button--light header-download" href="#download">Скачать <span aria-hidden="true">→</span></a>
   </header>
 
-  <main>
-    <section class="hero">
-      <h1>Быстрый браузер,<br>которому доверяют рунет</h1>
-      <p class="sub">Красота и скорость Zen Browser. Сертификаты Минцифры — из коробки: госуслуги, банки и госсайты открываются без экранов «соединение не защищено». Открытый код, никакой телеметрии.</p>
-      <div class="dl-buttons" id="dl">
-        <a class="btn primary" id="btn-win" href="https://github.com/molniya-browser/molniya/releases/latest">Скачать для Windows</a>
-        <a class="btn" id="btn-mac" href="https://github.com/molniya-browser/molniya/releases/latest">Скачать для macOS</a>
-        <a class="btn" id="btn-linux" href="https://github.com/molniya-browser/molniya/releases/latest">Скачать для Linux</a>
+  <main id="content">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <h1 id="hero-title">Добро пожаловать<br>в интернет <em>без барьеров</em></h1>
+        <p class="hero-subtitle">Браузер с сертификатами Минцифры.<br> Красивый, приватный и готовый к российским сайтам - всё уже настроено.</p>
+        <div class="hero-actions">
+          <a class="button button--light" href="#download">Скачать Молнию <span aria-hidden="true">→</span></a>
+          <a class="button button--dark" href="https://github.com/molniya-browser/molniya/releases" target="_blank" rel="noopener noreferrer">Все релизы</a>
+        </div>
+        <nav class="hero-socials" aria-label="Сообщество проекта">
+          <a href="https://github.com/molniya-browser" target="_blank" rel="noopener noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+          <a href="https://t.me/molniya_browser" target="_blank" rel="noopener noreferrer">Telegram <span aria-hidden="true">↗</span></a>
+          <a href="https://vk.com/good_gis" target="_blank" rel="noopener noreferrer">VK <span aria-hidden="true">↗</span></a>
+        </nav>
       </div>
-      <p class="hint" id="dl-hint">Ваша система определена автоматически</p>
+
+      <div class="media-slot media-slot--hero" data-media-slot="hero">
+        <video src="video/new-main.mp4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>
+      </div>
     </section>
 
-    <section id="pochemu" class="cards">
-      <div class="card"><h3>🛡 Сертификаты из коробки</h3><p>Корень Минцифры уже доверен: госуслуги, ВТБ и тысячи сайтов с российскими сертификатами — без предупреждений и танцев с настройками.</p></div>
-      <div class="card"><h3>📖 Открытый код</h3><p>Весь пайплайн сборки открыт: сами проверьте, что браузер не делает ничего лишнего. Основа — Zen Browser и Mozilla Firefox (MPL 2.0).</p></div>
-      <div class="card"><h3>🚫 Без слежки</h3><p>Никакой телеметрии, экспериментов и отчётов. Защитные проверки (фишинг-листы) включены — мы не жертвуем вашей безопасностью ради лозунга.</p></div>
+    <section class="features section" id="features" aria-labelledby="features-title">
+      <div class="section-heading section-heading--left">
+        <p class="section-label">Продуктивность в лучшем виде</p>
+        <h2 class="section-title" id="features-title">Возможности Молния<br><em>Настройки для рунета</em></h2>
+        <p>Мы сохранили всё, за что вы любите Zen Browser: продуманный интерфейс, гибкую работу с вкладками и инструменты, которые помогают сосредоточиться.</p>
+      </div>
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="media-slot" data-media-slot="workspaces">
+            <video src="video/spaces.mp4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>
+          </div>
+          <div class="feature-copy"><h3>Рабочие пространства</h3><p>Разделяйте вкладки для работы, учёбы и личных дел. Переключайтесь между проектами без хаоса.</p></div>
+        </article>
+        <article class="feature-card">
+          <div class="media-slot" data-media-slot="compact">
+            <video src="video/full-screen.mp4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>
+          </div>
+          <div class="feature-copy"><h3>Компактный режим</h3><p>Скрывайте боковую панель, когда она не нужна. Больше места для сайтов, меньше отвлечений.</p></div>
+        </article>
+        <article class="feature-card">
+          <div class="media-slot" data-media-slot="glance">
+            <video src="video/link-preview.mp4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>
+          </div>
+          <div class="feature-copy"><h3>Быстрый просмотр</h3><p>Открывайте ссылки поверх текущей страницы, чтобы быстро посмотреть содержимое и вернуться назад.</p></div>
+        </article>
+        <article class="feature-card">
+          <div class="media-slot" data-media-slot="split">
+            <video src="video/split-screen.mp4" autoplay muted loop playsinline preload="metadata" aria-hidden="true"></video>
+          </div>
+          <div class="feature-copy"><h3>Разделённый экран</h3><p>Размещайте два сайта рядом в одном окне - удобно сравнивать, переводить и работать с источниками.</p></div>
+        </article>
+      </div>
     </section>
 
-    <section id="faq" class="faq">
-      <h2>Частые вопросы</h2>
-      <details><summary>Windows показывает «не удалось проверить издателя». Это вирус?</summary>
-        <p>Нет. Мы пока не покупали код-подпись у Microsoft-партнёра — это дорого и требует юрлица. Нажмите «Подробнее» → «Выполнить в любом случае». Когда браузер наберёт аудиторию — подписем сборки.</p></details>
-      <details><summary>macOS: «приложение от неопознанного разработателя»</summary>
-        <p>То же самое: правый клик по Молнии → «Открыть» → «Открыть». Apple берёт $99/год за подпись разработчика — подпись появится по мере роста проекта.</p></details>
-      <details><summary>Что у вас с данными? Куда идёт мой трафик?</summary>
-        <p>Браузер не отправляет ничего о вас: телеметрия, эксперименты и отчёты вырезаны. Включены только защитные проверки — списки фишинговых сайтов и отзыва сертификатов (как у любого браузера). Поиск по умолчанию — Яндекс: как любой поисковик, он видит ваши поисковые запросы; переключить на DuckDuckGo можно в один клик в строке поиска.</p></details>
-      <details><summary>Это форк чего? Кто сделал?</summary>
-        <p>Молния — независимая пересборка открытого <a href="thank-you-zen.html">Zen Browser</a> (движок Firefox). Мы благодарны командам Zen Browser и Mozilla — они сделали 99% работы.</p></details>
-      <details><summary>Как обновляться?</summary>
-        <p>Встроенный индикатор сам покажет баннер, когда выйдет новая версия, со ссылкой на скачивание. Молния не обновляется сама — вы всегда контролируете момент.</p></details>
-      <details><summary>Чем лучше Яндекс.Браузера?</summary>
-        <p>Заявляем честно: это выбор вкуса и доверия. Яндекс закрыт и собирает данные; Молния открыта, минимальна и не звонит домой. Решение за вами.</p></details>
+    <section class="certificates section" aria-labelledby="certificates-title">
+      <div class="certificate-card">
+        <div class="certificate-copy">
+          <p class="section-label">Сертификаты Минцифры</p>
+          <h2 class="section-title" id="certificates-title">Российские сайты -<br><em>без ошибок</em></h2>
+          <p>Корневой и промежуточный сертификаты Минцифры уже встроены. Госуслуги, банки и другие сайты с российскими сертификатами открываются без предупреждений и ручной настройки.</p>
+          <div class="certificate-tags"><span>Корневой сертификат</span><span>Промежуточный сертификат</span></div>
+        </div>
+        <div class="certificate-emblem" aria-hidden="true">
+          <div class="emblem-rings"></div>
+          <svg viewBox="0 0 64 64"><path d="M32 7 53 15v13c0 13-8.9 23.2-21 28-12.1-4.8-21-15-21-28V15L32 7Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="m21 32 7 7 15-16" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Уже внутри</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="values section" id="values" aria-labelledby="values-title">
+      <div class="section-heading">
+        <p class="section-label">Наши принципы</p>
+        <h2 class="section-title" id="values-title">Красота, свобода<br><em>и спокойствие</em></h2>
+        <p>Молния соединяет открытые технологии Zen и Mozilla с настройками, которые важны для рунета.</p>
+      </div>
+      <div class="values-grid">
+        <article class="value-card"><span class="value-number">01</span><h3>Открытый и прозрачный</h3><p>Исходный код и процесс пересборки доступны на GitHub. Основа - Zen Browser и Mozilla Firefox, лицензия MPL 2.0.</p></article>
+        <article class="value-card"><span class="value-number">02</span><h3>Готовый к рунету</h3><p>Русский язык и регион RU, поиск Яндекс и сертификаты Минцифры настроены заранее. Поисковик можно сменить.</p></article>
+        <article class="value-card"><span class="value-number">03</span><h3>Приватный и защищённый</h3><p>Телеметрия и эксперименты отключены. Safe Browsing и обновления расширений остаются включёнными.</p></article>
+      </div>
+      <div class="included-strip" aria-label="Встроенные инструменты">
+        <span><b>uBlock Origin</b> уже блокирует рекламу</span>
+        <span><b>Русская локаль</b> выбрана по умолчанию</span>
+        <span><b>Новые релизы</b> с уведомлениями, без автообновления</span>
+      </div>
+    </section>
+
+    <section class="download section" id="download" aria-labelledby="download-title">
+      <div class="section-heading">
+        <p class="section-label">Бесплатно и с открытым кодом</p>
+        <h2 class="section-title" id="download-title">Выберите свою систему<br><em>Остальное уже готово</em></h2>
+        <p>Скачайте свежую сборку на GitHub. Для каждого релиза публикуются контрольные суммы SHA256.</p>
+      </div>
+      <div class="download-buttons" id="dl">
+        <a class="download-button" id="btn-win" href="https://github.com/molniya-browser/molniya/releases" target="_blank" rel="noopener noreferrer"><span><b>Windows</b><small>Portable ZIP</small></span><span aria-hidden="true">→</span></a>
+        <a class="download-button" id="btn-mac" href="https://github.com/molniya-browser/molniya/releases" target="_blank" rel="noopener noreferrer"><span><b>macOS</b><small>DMG</small></span><span aria-hidden="true">→</span></a>
+        <a class="download-button" id="btn-linux" href="https://github.com/molniya-browser/molniya/releases" target="_blank" rel="noopener noreferrer"><span><b>Linux</b><small>TAR.XZ</small></span><span aria-hidden="true">→</span></a>
+      </div>
+      <p class="download-hint" id="dl-hint">Выберите свою систему - все сборки доступны на GitHub</p>
+    </section>
+
+    <section class="faq section" id="faq" aria-labelledby="faq-title">
+      <div class="section-heading section-heading--left">
+        <p class="section-label">Частые вопросы</p>
+        <h2 class="section-title" id="faq-title">Коротко <em>о важном</em></h2>
+      </div>
+      <div class="faq-list">
+        <details><summary>Windows предупреждает о неизвестном издателе. Что это значит?<span aria-hidden="true"></span></summary><p>У сборки пока нет платной подписи разработчика Microsoft, поэтому SmartScreen может показать предупреждение. Скачивайте Молнию только из нашего официального репозитория и проверяйте SHA256. Для запуска выберите «Подробнее» → «Выполнить в любом случае».</p></details>
+        <details><summary>macOS пишет, что приложение от неопознанного разработчика<span aria-hidden="true"></span></summary><p>DMG имеет ad-hoc подпись, но не сертификат Apple Developer. Откройте приложение через контекстное меню: правый клик по «Молнии» → «Открыть» → ещё раз «Открыть». Скачивайте файл только из официальных релизов.</p></details>
+        <details><summary>Что происходит с моими данными?<span aria-hidden="true"></span></summary><p>Телеметрия, эксперименты и отчёты отключены. Safe Browsing и проверки отзыва сертификатов остаются включёнными для вашей безопасности. Поиск по умолчанию - Яндекс: как и любой поисковик, он получает ваши поисковые запросы. Его можно сменить в настройках.</p></details>
+        <details><summary>Чем Молния отличается от Zen Browser?<span aria-hidden="true"></span></summary><p>Это независимая пересборка официальных стабильных релизов <a href="thank-you-zen.html">Zen Browser</a> на движке Firefox. Мы добавляем сертификаты Минцифры, русские настройки, Яндекс, uBlock Origin и детектор новых релизов, а также отключаем телеметрию и родной апдейтер.</p></details>
+        <details><summary>Как обновляется браузер?<span aria-hidden="true"></span></summary><p>Встроенный детектор покажет уведомление, когда на GitHub появится новая версия. Скачивание и установка остаются под вашим контролем: Молния не обновляет себя автоматически и не перезаписывает ваши файлы.</p></details>
+        <details><summary>Кто развивает проект?<span aria-hidden="true"></span></summary><p>Молнию делает <a href="https://github.com/good-gis" target="_blank" rel="noopener noreferrer">good_gis</a>. Проект существует благодаря командам Zen Browser и Mozilla, которые создали его основу. Написать разработчику можно в <a href="https://t.me/good_gis" target="_blank" rel="noopener noreferrer">Telegram</a> или на <a href="mailto:gis.glushkov@yandex.ru">почту</a>.</p></details>
+      </div>
     </section>
   </main>
 
-  <footer>
-    <p>Молния — пересборка <a href="thank-you-zen.html">Zen Browser</a> и Mozilla Firefox, лицензия MPL 2.0. Товарные знаки принадлежат их владельцам.</p>
-    <p><a href="https://github.com/molniya-browser/molniya">GitHub</a> · <a href="https://t.me/molniya_browser">Telegram</a></p>
+  <footer class="site-footer">
+    <div class="footer-main">
+      <section class="footer-about" aria-labelledby="footer-brand">
+        <a class="brand" href="#top"><img src="molniya-512.png" alt="" width="44" height="44"><span id="footer-brand">Молния</span></a>
+        <p>Браузер с сертификатами Минцифры.<br>Красивый, приватный и готовый к рунету.</p>
+        <a class="button button--light" href="https://github.com/molniya-browser/molniya/releases" target="_blank" rel="noopener noreferrer">Скачать <span aria-hidden="true">→</span></a>
+      </section>
+      <nav class="footer-nav" aria-label="Ссылки в подвале">
+        <section><h2>Проект</h2><a href="https://github.com/molniya-browser" target="_blank" rel="noopener noreferrer">Организация GitHub</a><a href="https://github.com/molniya-browser/molniya" target="_blank" rel="noopener noreferrer">Исходный код</a><a href="https://github.com/molniya-browser/molniya/releases" target="_blank" rel="noopener noreferrer">Все релизы</a><a href="thank-you-zen.html">Благодарность Zen</a></section>
+        <section><h2>Сообщество</h2><a href="https://t.me/molniya_browser" target="_blank" rel="noopener noreferrer">Группа в Telegram</a><a href="https://t.me/good_gis" target="_blank" rel="noopener noreferrer">Telegram разработчика</a><a href="https://vk.com/good_gis" target="_blank" rel="noopener noreferrer">VK разработчика</a></section>
+        <section><h2>Связаться</h2><a href="mailto:gis.glushkov@yandex.ru">gis.glushkov@yandex.ru</a><a href="https://github.com/good-gis" target="_blank" rel="noopener noreferrer">GitHub разработчика</a><a href="#faq">Частые вопросы</a></section>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <p>Независимая пересборка Zen Browser и Mozilla Firefox. MPL 2.0. Товарные знаки принадлежат их владельцам.</p>
+      <p class="made-with">Сделано с любовью <a href="https://github.com/good-gis" target="_blank" rel="noopener noreferrer">good_gis</a></p>
+    </div>
   </footer>
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
