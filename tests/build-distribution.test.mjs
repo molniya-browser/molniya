@@ -47,7 +47,7 @@ test('policies.json: Яндекс поиском по умолчанию чер�
   const ya = p.SearchEngines.Add.find((e) => e.Name === 'Яндекс');
   assert.ok(ya, 'движок Яндекс описан');
   assert.equal(ya.Method, 'GET');
-  assert.equal(ya.IconURL, 'chrome://browser/content/branding/yandex.png');
+  assert.equal(ya.IconURL, 'https://yandex.ru/favicon.ico');
   assert.match(ya.URLTemplate, /^https:\/\/yandex\.ru\/search\/\?text=\{searchTerms\}$/);
 });
 

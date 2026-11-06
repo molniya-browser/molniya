@@ -35,7 +35,7 @@ function policiesJson() {
         Add: [
           {
             Name: CONFIG.search.default,
-            IconURL: 'chrome://browser/content/branding/yandex.png',
+            IconURL: 'https://yandex.ru/favicon.ico',
             URLTemplate: 'https://yandex.ru/search/?text={searchTerms}',
             SuggestURLTemplate: 'https://suggest.yandex.ru/suggest-ff.cgi?part={searchTerms}',
             Method: 'GET',
