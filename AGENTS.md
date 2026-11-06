@@ -153,7 +153,7 @@ Unit-тесты не заменяют проверку реального бра
 
 ## CI, релиз и деплой
 
-Workflow `release` запускается вручную (`workflow_dispatch`) с входами `zen_tag` и `build_n`; `build_n` передаётся в pipeline как `--build` и задаёт суффикс версии `molniya.N`. Матрица собирает macOS на `macos-14`, Windows и Linux на `ubuntu-24.04`; три артефакта и `version.txt` передаются в release-job. Последний пересчитывает общий `SHA256SUMS` и создаёт **draft** GitHub Release через `gh release create`.
+Workflow `release` запускается вручную (`workflow_dispatch`) с входами `zen_tag` и `build_n`; `build_n` передаётся в pipeline как `--build` и задаёт суффикс версии `molniya.N`. Матрица собирает macOS на `macos-15` (arm64; `macos-14` выведен GitHub из поддержки), Windows и Linux на `ubuntu-24.04`; три артефакта и `version.txt` передаются в release-job. Последний пересчитывает общий `SHA256SUMS` и создаёт **draft** GitHub Release через `gh release create`.
 
 После успешной матрицы и ручной приёмки draft публикуется человеком. Обновление uBlock выполняется вручную: проверить новый XPI, затем обновить `version` и `sha256` в `src/config.mjs`.
 
