@@ -24,7 +24,7 @@ export function verifyCertHash(buffer, expected) {
 }
 
 function curlDownload(url) {
-  const res = spawnSync('curl', ['-sSLf', '--max-time', '120', url], { maxBuffer: 16 * 1024 * 1024 });
+  const res = spawnSync('curl', ['-sSLf', '--max-time', '120', '--retry', '5', '--retry-delay', '3', '--retry-all-errors', url], { maxBuffer: 16 * 1024 * 1024 });
   if (res.status !== 0) {
     throw new Error(`Не удалось скачать ${url}: curl → ${res.status} ${res.stderr?.slice(0, 200)}`);
   }

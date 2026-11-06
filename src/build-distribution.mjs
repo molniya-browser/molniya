@@ -82,7 +82,7 @@ function sha256(buf) {
 }
 
 function defaultDownload(url) {
-  const res = spawnSync('curl', ['-sSLf', '--max-time', '300', url], { maxBuffer: 64 * 1024 * 1024 }); // без encoding: бинарно-чисто
+  const res = spawnSync('curl', ['-sSLf', '--max-time', '300', '--retry', '5', '--retry-delay', '3', '--retry-all-errors', url], { maxBuffer: 64 * 1024 * 1024 }); // без encoding: бинарно-чисто
   if (res.status !== 0) throw new Error(`Не удалось скачать ${url}: curl → ${res.status}`);
   return res.stdout; // Buffer
 }
