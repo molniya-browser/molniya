@@ -37,7 +37,8 @@
 - `src/build-distribution.mjs` — создаёт `distribution/policies.json`, `distribution/Certificates/`, `distribution/extensions/`, `distribution/distribution.ini`, `molniya.cfg` и `defaults/pref/autoconfig.js`. Здесь же скачиваются и проверяются сертификаты/uBlock и упаковывается детектор в XPI.
 - `src/patch-brand.mjs` — распаковывает и собирает `omni.ja`, заменяет строки и графические ассеты бренда, патчит `AppConstants.sys.mjs`, `application.ini`, а на macOS — `Info.plist`, `InfoPlist.strings` и имя исполняемого файла. `BuildID` обновляется при каждом патче, чтобы не оставался старый startup cache. `BrandResidueError` останавливает сборку при остаточном бренде в проверяемых строках.
 - `src/repack-mac.mjs` — ad-hoc подпись `.app`, проверка подписи, создание и проверка DMG; также содержит общие функции имён артефактов и SHA256.
-- `src/repack-win.mjs` — общий `patchInstallDir()` для Windows/Linux: distribution, бренд-omni и идентичность каталога установки.
+- `src/repack-win.mjs` — общий `patchInstallDir()` для Windows/Linux: distribution, бренд-omni и идентичность каталога установки; на Windows — PE-патчинг exe и плитки Пуска.
+- `src/patch-win-exe.mjs` — патчер PE-ресурсов exe Windows: иконки Zen → Молния строго in-place без роста файла (BMP-кадры байт-в-байт по размеру слота, PNG-256 пишется только если влезает, иначе 256-кадр выбрасывается из группы), строки VERSIONINFO (Молния/molniya.exe; атрибуция Mozilla сохраняется). При нехватке места под VERSIONINFO выбрасывается мусорный RT_STRING. Синтетический мини-PE для тестов — `tests/helpers/win-pe.mjs`.
 - `src/repack-linux.mjs` — переименование Linux-запускателя/корневого каталога и создание `tar.xz`.
 - `src/pipeline.mjs` — CLI и оркестратор полного процесса: fetch → unpack → distribution → brand/identity → repack → checksum.
 - `detector-extension/` — встроенное MV2-расширение. `lib/version.js` содержит чистую логику разбора и сравнения версий; `background.js` проверяет GitHub Releases при старте и раз в сутки, показывает бейдж/уведомление; `options.*` управляют включением проверок.
@@ -68,7 +69,7 @@
 ### Платформенные различия
 
 - **macOS:** DMG монтируется через `hdiutil`, `.app` копируется в `work/build/Молния.app`; ресурсы находятся в `Contents/Resources/`. Дополнительно заменяются ICNS, удаляется `Assets.car`, бинарник `zen` переименовывается в `molniya`. Перед подписью обязательно выполняется `xattr -cr`; затем ad-hoc `codesign`, `codesign --verify`, создание DMG и `hdiutil verify`.
-- **Windows:** NSIS-инсталлятор целиком распаковывается `7z`; каталог `core/` переименовывается в `Molniya/`, патчится и архивируется в portable ZIP. Инсталлятор и реестр Windows не используются.
+- **Windows:** NSIS-инсталлятор целиком распаковывается `7z`; каталог `core/` переименовывается в `Molniya/`, патчится и архивируется в portable ZIP. Инсталлятор и реестр Windows не используются. Бинарник `zen.exe` переименовывается в `molniya.exe`; иконки и VERSIONINFO в `molniya.exe` и `private_browsing.exe` патчатся in-place (файл не растёт — раскладки BMP-слотов и палитровый `icon256.png` ≤ 16540 байт охраняются тестами); плитки Пуска `browser/VisualElements/` заменяются на `icon70/icon150.png`. ZIP-артефакт удаляется перед упаковкой: `zip` дополняет существующий архив, и в нём иначе остаются призраки переименованных файлов.
 - **Linux:** upstream `tar.xz` распаковывается, корень установки патчится тем же `patchInstallDir()`, запускатель и корневой каталог получают имя `molniya`, затем создаётся новый `tar.xz`.
 
 ### Обновления
@@ -127,14 +128,14 @@ node scripts/check-links.mjs   # если затронут лендинг или
 npm run toolcheck             # при изменении требований к инструментам
 ```
 
-В настоящее время `npm test` запускает 32 теста из `tests/*.test.mjs`. Они используют `node:test`, `assert/strict`, временные каталоги и моки скачивания/fetch. Тесты патчинга и упаковки вызывают настоящие `7z`, `zip`, `tar` и связанные утилиты; macOS-тест идентичности вызывает `plutil`, поэтому весь набор рассчитан прежде всего на среду разработки macOS.
+В настоящее время `npm test` запускает 49 тестов из `tests/*.test.mjs`. Они используют `node:test`, `assert/strict`, временные каталоги и моки скачивания/fetch. Тесты патчинга и упаковки вызывают настоящие `7z`, `zip`, `tar` и связанные утилиты; PE-патчер тестируется на синтетическом мини-PE без настоящих exe; macOS-тест идентичности вызывает `plutil`, поэтому весь набор рассчитан прежде всего на среду разработки macOS.
 
 Покрытые инварианты важно не ослаблять:
 
 - отсутствие upstream-ассета и подмена сертификата/uBlock должны приводить к ошибке;
 - сертификаты должны лежать именно в `Certificates/`, а политика содержать голые имена;
 - телеметрия off, но Safe Browsing и обновления расширений on;
-- бренд-строки и картинки заменяются, residue-контроль остаётся;
+- бренд-строки и картинки заменяются, residue-контроль остаётся; в Windows-артефакте нет `zen.exe` — бинарник переименован, а PE-ресурсы (иконки, VERSIONINFO) не содержат Zen;
 - `BuildID` меняется, артефакты и SHA256 имеют ожидаемый формат;
 - детектор не уведомляет при offline, той же версии или повторном обнаружении;
 - битые внешние ссылки лендинга обнаруживаются.
@@ -152,9 +153,7 @@ Unit-тесты не заменяют проверку реального бра
 
 ## CI, релиз и деплой
 
-Workflow `release` запускается вручную (`workflow_dispatch`) с входами `zen_tag` и `build_n`. Матрица собирает macOS на `macos-14`, Windows и Linux на `ubuntu-24.04`; три артефакта и `version.txt` передаются в release-job. Последний пересчитывает общий `SHA256SUMS` и создаёт **draft** GitHub Release через `gh release create`.
-
-Важная деталь текущей реализации: `src/pipeline.mjs` всегда формирует версию с суффиксом `molniya.1`; вход `build_n` объявлен в workflow, но в pipeline не передаётся и не используется. Не рассчитывайте на него для инкремента версии, пока это не исправлено.
+Workflow `release` запускается вручную (`workflow_dispatch`) с входами `zen_tag` и `build_n`; `build_n` передаётся в pipeline как `--build` и задаёт суффикс версии `molniya.N`. Матрица собирает macOS на `macos-14`, Windows и Linux на `ubuntu-24.04`; три артефакта и `version.txt` передаются в release-job. Последний пересчитывает общий `SHA256SUMS` и создаёт **draft** GitHub Release через `gh release create`.
 
 После успешной матрицы и ручной приёмки draft публикуется человеком. Обновление uBlock выполняется вручную: проверить новый XPI, затем обновить `version` и `sha256` в `src/config.mjs`.
 

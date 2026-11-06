@@ -35,7 +35,7 @@ jobs:
       - name: Пайплайн ${{ matrix.target }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run pipeline -- --os ${{ matrix.target }} --tag ${{ inputs.zen_tag }}
+        run: npm run pipeline -- --os ${{ matrix.target }} --tag ${{ inputs.zen_tag }} --build ${{ inputs.build_n }}
       - name: Артефакты
         uses: actions/upload-artifact@v4
         with:

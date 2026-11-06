@@ -317,6 +317,14 @@ export async function patchAppIdentity(contentsDir, { platform } = {}) {
         renameSync(oldBin, newBin);
         result.renamedBinary = true;
       }
+    } else if (platform === 'win') {
+      // симметрично mac: пользователь запускает molniya.exe, а не zen.exe
+      const oldBin = path.join(contentsDir, 'zen.exe');
+      const newBin = path.join(contentsDir, 'molniya.exe');
+      if (existsSync(oldBin)) {
+        renameSync(oldBin, newBin);
+        result.renamedBinary = true;
+      }
     }
   } finally {
     rmSync(tmp, { recursive: true, force: true });

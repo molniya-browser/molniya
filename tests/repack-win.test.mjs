@@ -52,3 +52,61 @@ test('patchInstallDir: бренд+identity+cfg+distribution на каталог�
   assert.ok(existsSync(path.join(dir, 'distribution', 'policies.json')));
   assert.ok(existsSync(path.join(dir, 'distribution', 'Certificates', 'r.crt')));
 });
+
+test('patchInstallDir: exe Windows получают иконки/версию Молнии, плитки Пуска заменяются', async () => {
+  const { buildSyntheticPe, bmpOld, ZEN_STRINGS, parseRsrcLeaves, parseVersionStrings, pngWriter } =
+    await import('./helpers/win-pe.mjs');
+  const dir = mkdtempSync(path.join(tmpdir(), 'win2-'));
+  mkdirSync(path.join(dir, 'browser', 'VisualElements'), { recursive: true });
+  const browserOmni = zipFixture(dir, {
+    'chrome/ru/locale/branding/brand.properties': 'brandShortName=Zen\n',
+    'chrome/browser/content/branding/about-logo.png': 'stub',
+  });
+  spawnSync('cp', [browserOmni, path.join(dir, 'browser', 'omni.ja')]);
+  const tkOmni = zipFixture(dir, { 'modules/AppConstants.sys.mjs': 'MOZ_APP_NAME: "zen",\n' });
+  spawnSync('cp', [tkOmni, path.join(dir, 'omni.ja')]);
+  writeFileSync(path.join(dir, 'application.ini'), '[App]\nVendor=Mozilla\nName=Zen\nProfile=zen\nBuildID=20261029123729\nVersion=1.24b\n');
+
+  const iconDir = path.join(dir, 'icons');
+  mkdirSync(iconDir);
+  for (const s of [16, 32, 48, 64, 128]) writeFileSync(path.join(iconDir, `icon${s}.png`), pngWriter(s, [9, 8, 7, 255]));
+  writeFileSync(path.join(iconDir, 'icon256.png'), pngWriter(256, [9, 8, 7, 255]));
+  writeFileSync(path.join(iconDir, 'icon70.png'), pngWriter(70, [5, 5, 5, 255]));
+  writeFileSync(path.join(iconDir, 'icon150.png'), pngWriter(150, [6, 6, 6, 255]));
+
+  const peBody = () => buildSyntheticPe({
+    icons: [{ id: 1, data: bmpOld(16) }],
+    groups: [{ id: 1, entries: [{ w: 16, bytesRes: 1128, iconId: 1 }] }],
+    versionStrings: ZEN_STRINGS,
+    stringTableBytes: 64,
+    slack: 4,
+  });
+  writeFileSync(path.join(dir, 'zen.exe'), peBody());
+  writeFileSync(path.join(dir, 'private_browsing.exe'), peBody());
+  for (const f of ['VisualElements_70.png', 'VisualElements_150.png', 'PrivateBrowsing_70.png', 'PrivateBrowsing_150.png']) {
+    writeFileSync(path.join(dir, 'browser', 'VisualElements', f), 'ZEN-OLD');
+  }
+
+  const res = await patchInstallDir(dir, {
+    zenTag: '1.24b',
+    platform: 'win',
+    brandAssets: iconDir,
+    downloads: { cert: async () => fakeCert, ublock: async () => fakeXpi },
+    certs: [{ file: 'r.crt', url: 'u', sha256: fakeSha }, { file: 's.crt', url: 'u', sha256: fakeSha }],
+    ublock: { url: 'u', version: '1', sha256: createHash('sha256').update(fakeXpi).digest('hex') },
+  });
+
+  assert.ok(!existsSync(path.join(dir, 'zen.exe')), 'zen.exe должен быть переименован');
+  assert.ok(existsSync(path.join(dir, 'molniya.exe')), 'должен быть molniya.exe');
+  assert.equal(res.winExe.length, 2, 'патчены оба exe');
+
+  for (const name of ['molniya.exe', 'private_browsing.exe']) {
+    const leaves = parseRsrcLeaves(readFileSync(path.join(dir, name)));
+    const strings = parseVersionStrings(leaves.find((l) => l.type === 16).data);
+    assert.equal(strings.FileDescription, 'Молния', `${name}: FileDescription`);
+    assert.equal(strings.OriginalFilename, name, `${name}: OriginalFilename`);
+  }
+  const ve = (f) => readFileSync(path.join(dir, 'browser', 'VisualElements', f));
+  assert.ok(ve('VisualElements_70.png').equals(readFileSync(path.join(iconDir, 'icon70.png'))));
+  assert.ok(ve('PrivateBrowsing_150.png').equals(readFileSync(path.join(iconDir, 'icon150.png'))));
+});

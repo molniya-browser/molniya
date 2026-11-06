@@ -83,6 +83,7 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
     const outDir = CONFIG.paths.dist;
     mkdirSync(outDir, { recursive: true });
     const zipPath = path.resolve(outDir, artifactName('win', version)); // cwd у zip = winDir
+    rmSync(zipPath, { force: true }); // zip дополняет существующий архив — иначе в нём живут призраки переименованных файлов
     sh('zip', ['-qrX', zipPath, 'Molniya'], { cwd: winDir });
     await appendFile(path.join(outDir, 'SHA256SUMS'), shaLine(zipPath) + '\n');
     console.log(`[win] готово: ${zipPath}`);
