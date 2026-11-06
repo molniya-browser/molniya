@@ -4,3 +4,5 @@ node_modules/
 .DS_Store
 *.log
 .superpowers/
+landing/video/*.mov
+docs/

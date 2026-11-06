@@ -1,75 +1,44 @@
 # Молния
 
-Открытый браузер для рунета: пересборка релизов [Zen Browser](https://github.com/zen-browser/desktop) (движок Firefox, MPL 2.0) с доверенным корневым сертификатом Минцифры из коробки, поиском Яндекс по умолчанию, uBlock Origin и полностью выключенной телеметрией.
+Браузер для рунета на движке Firefox. Сертификаты Минцифры, поиск Яндекс и uBlock Origin — уже внутри. Телеметрии нет.
 
-- Спека: `docs/superpowers/specs/2026-11-05-molniya-browser-design.md`
-- План: `docs/superpowers/plans/2026-11-05-molniya-v1.md`
-- Findings спайка (вся рецептура): `docs/spike-findings-mac.md`
+[![Последний релиз](https://img.shields.io/github/v/release/molniya-browser/molniya)](https://github.com/molniya-browser/molniya/releases/latest)
+[![Лицензия](https://img.shields.io/badge/license-MPL--2.0-green)](#благодарности)
+[![Платформы](https://img.shields.io/badge/%D0%BF%D0%BB%D0%B0%D1%82%D1%84%D0%BE%D1%80%D0%BC%D1%8B-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-8957e5)](#скачать)
 
-## Что сделано (v1, статус: артефакты собираются)
+## Чем отличается
 
-| Кусок | Как работает |
-|---|---|
-| **Сертификаты Минцифры** | Файлы кладутся в `<приложение>/distribution/Certificates/` (заглавная C), в политике — голые имена. Движок политик ищет их первым делом в `XREAppDist` — это канонический механизм macOS/Linux; токен `{InstallationDirectory}` на маке не работает, autoconfig-песочница не умеет Components (всё проверено спайком) |
-| **Поиск Яндекс** | Политика `SearchEngines.Add` + `Default` — движок регистрируется политикой, DuckDuckGo уже в комплекте — переключение в один клик |
-| **Брендинг** | Пять слоёв: (1) sweep `\bZen Browser\b`/`\bZen\b` → «Молния» по всем `.ftl/.dtd/.properties` в browser-omni (82+209 строк, residue-контроль кидает исключение); (2) константы `AppConstants.sys.mjs` в toolkit-omni (вкомпиленый `MOZ_APP_NAME` и др.); (3) `application.ini` (Name/Vendor/Profile/RemotingName + **BuildID-бамп на каждый репак** — иначе стартовый кэш профилей переживает обновление); (4) `Info.plist` + `en.lproj/InfoPlist.strings` (имя у яблока); (5) картинки: wordmark-текст, лого-иконки из `assets/branding/` поверх зеновских векторов, `Molniya.icns` в бандл + **удаление `Assets.car`** (в нём зеновский AppIcon, который AppKit предпочитает) |
-| **Телекартинка приватности** | Телеметрия/эксперименты/отчёты off; Safe Browsing, списки отзыва сертификатов, обновления расширений — ON (защита ≠ слежка; лендинг объясняет честно) |
-| **Обновления** | Родной апдейтер Zen отключён (`DisableAppUpdate` + префы); встроенное расширение-детектор раз в день опрашивает GitHub Releases и показывает бейдж/уведомление (offline → тишина) |
-| **Русский язык** | Форсируется локаль ru; ядро Firefox уже переведено и есть в комплекте (лэнгпак не нужен); строки самого Zena переведены сообществом, дыры добираем sweep'ом |
-| **Сборки** | macOS `.dmg` (ad-hoc codesign, `hdiutil verify` в пайплайне), Windows portable `.zip` (NSIS-инсталлятор Zena **целиком извлекается 7z** → `core/` → патчи → zip; реестр не трогаем, сосуществование безопасно), Linux `.tar.xz` (лаунчер `molniya`, корень архива `molniya/`) |
-| **CI** | `workflow_dispatch(zen_tag, build_n)` → матрица → draft-release с SHA256SUMS; Pages для лендинга |
+- 🔐 **Госуслуги без настройки** — корневые сертификаты Минцифры уже внутри браузера: Госуслуги, банки и госсайты открываются сразу, ничего устанавливать не нужно.
+- 🛡 **uBlock Origin из коробки** — реклама и трекеры блокируются с первого запуска.
+- 🔎 **Яндекс и русский язык** — поиск по умолчанию, интерфейс и регион настроены сразу.
+- 🚫 **Телеметрия выключена** — ни аналитики, ни экспериментов, ни фоновой слежки. Защита от вредоносных сайтов (Safe Browsing) и обновления блокировщиков при этом работают.
+- ⚖️ **Честно про основу** — «Молния» — независимая пересборка стабильных релизов Zen Browser на движке Firefox. Вся базовая работа — Zen Browser и Mozilla.
 
-## Как собрать
+## Скачать
 
-```bash
-brew install p7zip          # один раз
-npm install                 # нет — зависимостей нет; просто убедитесь, что Node ≥ 20
-npm run toolcheck           # проверит внешние инструменты
-npm run pipeline -- --os mac   --tag latest   # → dist/molniya-<версия>-mac.dmg
-npm run pipeline -- --os win   --tag latest   # → dist/...-win.zip   (кросс-сборка!)
-npm run pipeline -- --os linux --tag latest   # → dist/...-linux.tar.xz
-```
+| Платформа | Файл | Как запустить |
+|---|---|---|
+| macOS | `.dmg` | открыть образ и перетащить «Молнию» в «Программы» |
+| Windows | `.zip` | распаковать и запустить — portable, без установки и прав администратора |
+| Linux | `.tar.xz` | распаковать и запустить `molniya` |
 
-Все три артефакта собираются **локально на macOS**. Версия Молнии = `<тег Zen>-molniya.<N>`.
+- [Последний релиз на GitHub](https://github.com/molniya-browser/molniya/releases/latest)
+- [Сайт molniya-browser.ru](https://molniya-browser.ru)
 
-## Как устроен репозиторий
+Целостность скачанных файлов можно проверить по `SHA256SUMS` из релиза: `shasum -a 256 -c SHA256SUMS` на macOS или `sha256sum -c SHA256SUMS` на Linux.
 
-```
-src/config.mjs            — все константы: upstream, пины сертификатов и uBlock (sha256), бренд
-src/fetch-upstream.mjs    — скачивание артефактов Zen + строгая проверка ассетов
-src/certs.mjs             — сертификаты Минцифры только с gu-st.ru с проверкой пинов
-src/build-distribution.mjs— policies.json, molniya.cfg, autoconfig, Certificates/, xpi расширений
-src/patch-brand.mjs       — sweep строк, бренд-картинки, AppConstants, identity, BuildID-бамп
-src/repack-mac|win|linux  — платформенная упаковка (codesign+hdiutil / zip / tar.xz)
-src/pipeline.mjs          — оркестратор
-detector-extension/       — webextension-детектор обновлений (MV2)
-landing/                  — лендинг molniya-browser.ru (GitHub Pages)
-scripts/check-links.mjs   — проверка ссылок лендинга
-tests/                    — 32 теста (node --test): npm test
-assets/branding/          —(wordmark, лого, иконки всех размеров — генерируются из мастера)
-```
+## Частые вопросы
 
-## Проверки
-
-```bash
-npm test                        # 32/32
-node scripts/check-links.mjs    # ссылки лендинга
-```
-
-Защитные механизмы: SHA256-пины сертификатов и uBlock (ротация/подмена валит пайплайн), residue-контроль бренда (остаток «Zen» — исключение), `hdiutil verify` + `codesign --verify` в пайплайне, SHA256SUMS на каждый релиз.
-
-## Известные компромиссы v1
-
-- **Общий корень профиля с Zen** (`~/Library/Application Support/zen`): имя зашито в скомпилированном XUL, перепаковкой не меняется. Последовательная работа безопасна (движок один), одновременный запуск двух браузеров даст стандартный диалог «профиль используется». Формальное разделение — дорога А (сборка из исходников).
-- **Без код-подписи** OS-вендоров: SmartScreen/Gatekeeper предупреждают (FAQ лендинга объясняет). Подпись — после подтверждённого спроса.
-- Windows — portable zip без инсталлятора: реестр не трогаем, зато без прав администратора и следов.
-
-## Релиз
-
-1. GitHub → Actions → **release** → Run workflow (`zen_tag`, `build_n`) → draft-release с тремя артефактами + SHA256SUMS.
-2. Чек-лист ручной приёмки: `docs/release-checklist.md` (заполняется на репетиции).
-3. Обновление uBlock — вручную: скачать xpi, обновить `version`+`sha256` в `src/config.mjs`.
+- **macOS предупреждает при первом запуске?** Да: у сборки нет подписи Apple Developer (только ad-hoc). Нажмите правой кнопкой на «Молнию» → «Открыть» → ещё раз «Открыть». После первого запуска предупреждение не повторяется.
+- **Windows показывает окно SmartScreen?** Да: нет подписи Microsoft. Нажмите «Подробнее» → «Выполнить в любом случае».
+- **Как обновляться?** «Молния» сама не обновляется. Встроенный детектор раз в сутки проверяет новые версии и показывает уведомление со ссылкой — скачайте новый релиз и замените приложение.
+- **Можно ли держать рядом с Zen Browser?** Да, но запускать по очереди: движок один и профиль общий, поэтому при одновременном запуске появится стандартный диалог «профиль уже используется».
+- **Это форк Firefox?** Нет. «Молния» не изменяет исходники браузера: это пересборка готовых стабильных релизов Zen Browser (движок Firefox) с дополнительной настройкой. Обязательная атрибуция Zen Browser и Mozilla сохранена.
 
 ## Благодарности
 
-«Молния» — независимая пересборка [Zen Browser](https://github.com/zen-browser/desktop) и Mozilla Firefox. Вся базовая работа — их. Лицензия MPL 2.0; товарные знаки принадлежат владельцам.
+«Молния» — независимая пересборка [Zen Browser](https://github.com/zen-browser/desktop) и Mozilla Firefox. Вся базовая работа — их. Лицензия MPL 2.0; товарные знаки принадлежат своим владельцам.
+
+---
+
+Хотите помочь проекту или собрать браузер самостоятельно — [CONTRIBUTING.md](CONTRIBUTING.md).
