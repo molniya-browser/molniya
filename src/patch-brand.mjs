@@ -81,7 +81,7 @@ function sh(cmd, args, opts = {}) {
 // полностью (проверено спайком: 13 597 файлов, рабочее приложение). Терпим код, проверяем содержимое.
 function extractOmni(omniPath, tree) {
   const res = spawnSync('7z', ['x', '-y', `-o${tree}`, omniPath], { maxBuffer: 256 * 1024 * 1024 });
-  const looksComplete = ['chrome.manifest', 'chrome', 'modules', 'localization'].some((m) => existsSync(path.join(tree, m)));
+  const looksComplete = ['chrome.manifest', 'chrome', 'modules', 'localization', 'defaults'].some((m) => existsSync(path.join(tree, m)));
   if (!looksComplete) {
     throw new Error(`7z x ${omniPath} → ${res.status}: ${String(res.stderr ?? '').slice(0, 300)} (архив не распакован)`);
   }
@@ -110,6 +110,28 @@ export function aboutDialogOverrides(content, ru) {
     content = content.replace(new RegExp(`^(${id.replace(/[-]/g, '\\-')}) = .*$`, 'm'), `$1 = ${BLANK}`);
   }
   return content;
+}
+
+// Стартовые URL брендинга: никаких чужих страниц при запуске; «Что нового» — на наш GitHub
+const BRANDING_PREFS = [
+  ['pref("startup.homepage_override_url",', ''],
+  ['pref("startup.homepage_welcome_url",', ''],
+  ['pref("startup.homepage_welcome_url.additional",', ''],
+  ['pref("app.update.url.manual",', 'https://github.com/molniya-browser/molniya/releases'],
+  ['pref("app.update.url.details",', 'https://github.com/molniya-browser/molniya/releases'],
+  ['pref("app.releaseNotesURL",', 'https://github.com/molniya-browser/molniya/releases'],
+  ['pref("app.releaseNotesURL.aboutDialog",', 'https://github.com/molniya-browser/molniya/releases'],
+  ['pref("app.releaseNotesURL.prompt",', 'https://github.com/molniya-browser/molniya/releases'],
+];
+
+function patchBrandingPrefs(tree) {
+  const f = path.join(tree, 'defaults', 'preferences', 'firefox-branding.js');
+  if (!existsSync(f)) return;
+  const lines = readFileSync(f, 'utf8').split('\n').map((line) => {
+    const hit = BRANDING_PREFS.find(([prefix]) => line.startsWith(prefix));
+    return hit ? `${hit[0]} "${hit[1]}");` : line;
+  });
+  writeFileSync(f, lines.join('\n'), 'utf8');
 }
 
 // Дефолтные имена пространств Zen → русские (идемпотентно)
@@ -158,6 +180,9 @@ export async function patchOmni(omniPathArg, { workDir, brandAssets, version } =
 
   // Дефолтные имена пространств — по-русски («Личное», «Приватное»)
   patchSpaceNames(tree);
+
+  // Стартовые страницы брендинга — пустые; релизы — наш GitHub
+  patchBrandingPrefs(tree);
 
   for (const file of walkLocaleFiles(tree)) {
     let content = await readFile(file, 'utf8');

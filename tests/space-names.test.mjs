@@ -42,3 +42,20 @@ test('patchOmni: дефолтные имена пространств — «Ли
   assert.match(out, /isPrivateWindow \? "Приватное" : label/);
   assert.doesNotMatch(out, /"Space"|"Default"|"Incognito"/);
 });
+
+test('patchOmni: стартовые URL брендинга зануляются, релизы ведут на GitHub Молнии', async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'bp-'));
+  const BR = `pref("startup.homepage_override_url", "https://zen-browser.app/whatsnew?v=%VERSION%");
+pref("startup.homepage_welcome_url", "https://zen-browser.app/welcome/");
+pref("startup.homepage_welcome_url.additional", "https://zen-browser.app/privacy-policy/");
+pref("app.releaseNotesURL", "https://zen-browser.app/whatsnew/");
+`;
+  const z = makeOmni(dir, { 'defaults/preferences/firefox-branding.js': BR });
+  await patchOmni(z, { workDir: path.join(dir, 'w'), version: '1.0-molniya.1' });
+  const out = spawnSync('7z', ['x', '-so', z, 'defaults/preferences/firefox-branding.js'], { encoding: 'utf8', maxBuffer: 1024 * 1024 }).stdout;
+  assert.match(out, /pref\("startup\.homepage_override_url", ""\);/);
+  assert.match(out, /pref\("startup\.homepage_welcome_url", ""\);/);
+  assert.match(out, /pref\("startup\.homepage_welcome_url\.additional", ""\);/);
+  assert.match(out, /pref\("app\.releaseNotesURL", "https:\/\/github\.com\/molniya-browser\/molniya\/releases"\);/);
+  assert.doesNotMatch(out, /zen-browser\.app/);
+});
