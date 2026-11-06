@@ -52,12 +52,13 @@ async function embedMacIcons(appDir) {
   return true;
 }
 
-export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.work }) {
+export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.work, build = 1 }) {
   if (!['mac', 'win', 'linux'].includes(os)) throw new Error(`Неизвестная ОС: ${os}`);
+  if (!Number.isInteger(build) || build < 1) throw new Error(`Номер сборки должен быть целым ≥ 1: ${build}`);
   mkdirSync(workDir, { recursive: true });
 
   const { assetPath, tagName } = await fetchUpstream({ os, tag, destDir: path.join(workDir, 'upstream') });
-  const version = `${tagName}-molniya.1`;
+  const version = `${tagName}-molniya.${build}`;
   await writeVersionFile(version);
   console.log(`[${os}] upstream ${tagName} → ${assetPath}`);
 
@@ -147,7 +148,12 @@ if (process.argv[1] && process.argv[1].endsWith('pipeline.mjs')) {
     const i = args.indexOf(`--${name}`);
     return i >= 0 ? args[i + 1] : def;
   };
-  runPipeline({ os: get('os', 'mac'), tag: get('tag', 'latest'), workDir: get('work', CONFIG.paths.work) })
+  runPipeline({
+    os: get('os', 'mac'),
+    tag: get('tag', 'latest'),
+    workDir: get('work', CONFIG.paths.work),
+    build: Number.parseInt(get('build', '1'), 10),
+  })
     .then((r) => { console.log('ВЕРСИЯ:', r.version); process.exit(0); })
     .catch((e) => { console.error('ПАЙПЛАЙН УПАЛ:', e.message); process.exit(1); });
 }
