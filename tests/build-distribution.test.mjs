@@ -75,7 +75,7 @@ test('molniya.cfg: телеметрия off, защиты ON, локаль ru (R
   assert.doesNotMatch(cfg, /toolkit\.telemetry\.[a-z]+", true/);
 });
 
-test('autoconfig.js и distribution.ini на месте, детектор и uBlock упакованы, хеши сверены', async () => {
+test('autoconfig.js и distribution.ini на месте, uBlock упакован, хеши сверены', async () => {
   const root = mkdtempSync(path.join(tmpdir(), 'dist-'));
   const res = await buildDistribution(root, baseOpts(root));
   const auto = readFileSync(path.join(root, 'defaults', 'pref', 'autoconfig.js'), 'utf8');
@@ -86,8 +86,7 @@ test('autoconfig.js и distribution.ini на месте, детектор и uBl
   const extDir = path.join(root, 'distribution', 'extensions');
   const exts = readdirSync(extDir);
   assert.ok(exts.includes('ublock-origin@molniya.xpi'));
-  assert.ok(exts.includes('update-detector@molniya.browser.xpi'));
-  assert.ok(res.files.length >= 6);
+  assert.ok(res.files.length >= 5);
 });
 
 test('подмена сертификата на сервере валит генератор (CertPinError)', async () => {

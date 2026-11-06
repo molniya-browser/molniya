@@ -38,7 +38,6 @@ test('patchInstallDir: бренд+identity+cfg+distribution на каталог�
     downloads: { cert: async () => fakeCert, ublock: async () => fakeXpi },
     certs: [{ file: 'r.crt', url: 'u', sha256: fakeSha }, { file: 's.crt', url: 'u', sha256: fakeSha }],
     ublock: { url: 'u', version: '1', sha256: createHash('sha256').update(fakeXpi).digest('hex') },
-    detectorDir: 'detector-extension',
   });
 
   const readFromZip = (z, rel) => spawnSync('7z', ['x', '-so', z, rel], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 }).stdout;

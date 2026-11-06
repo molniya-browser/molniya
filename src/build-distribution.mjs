@@ -86,12 +86,6 @@ function defaultDownload(url) {
   return res.stdout; // Buffer
 }
 
-function zipDirToBuffer(dir) {
-  const res = spawnSync('zip', ['-qr', '-', '.'], { cwd: dir, maxBuffer: 128 * 1024 * 1024 });
-  if (res.status !== 0) throw new Error(`zip ${dir} → ${res.status}`);
-  return res.stdout;
-}
-
 /**
  * @param {string} root каталог установки (на mac = .app/Contents/Resources; win/linux = корень установки)
  * @param {object} opts {zenTag, detectorDir, downloads:{cert,ublock}, certs, ublock}
@@ -138,12 +132,6 @@ export async function buildDistribution(root, opts = {}) {
   const ublockPath = path.join(extDir, 'ublock-origin@molniya.xpi');
   await writeFile(ublockPath, ublockBuf);
   written.push(ublockPath);
-
-  // 3) Детектор обновлений: упаковка каталога в xpi
-  const detectorBuf = zipDirToBuffer(detectorDir);
-  const detectorPath = path.join(extDir, 'update-detector@molniya.browser.xpi');
-  await writeFile(detectorPath, detectorBuf);
-  written.push(detectorPath);
 
   // 4) policies.json / cfg / autoconfig / distribution.ini
   const files = [

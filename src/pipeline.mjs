@@ -76,7 +76,7 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
     const ini = await readFile(path.join(molniyaDir, 'application.ini'), 'utf8');
     const geckoVersion = ini.match(/^Version=(.+)$/m)?.[1] ?? 'unknown';
     const res = await patchInstallDir(molniyaDir, {
-      zenTag: tagName, platform: 'win', brandAssets: path.resolve('assets', 'branding'),
+      zenTag: tagName, platform: 'win', brandAssets: path.resolve('assets', 'branding'), version,
     });
     console.log(`[win] бренд: ${res.replaced} строк, gecko ${geckoVersion}`);
 
@@ -100,7 +100,7 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
     const ini = await readFile(path.join(srcDir, 'application.ini'), 'utf8');
     const geckoVersion = ini.match(/^Version=(.+)$/m)?.[1] ?? 'unknown';
     const res = await patchInstallDir(srcDir, {
-      zenTag: tagName, platform: 'linux', brandAssets: path.resolve('assets', 'branding'),
+      zenTag: tagName, platform: 'linux', brandAssets: path.resolve('assets', 'branding'), version,
     });
     console.log(`[linux] бренд: ${res.replaced} строк, gecko ${geckoVersion}`);
     const outDir = CONFIG.paths.dist;
@@ -125,6 +125,7 @@ export async function runPipeline({ os, tag = 'latest', workDir = CONFIG.paths.w
 
   const omniRes = await patchOmni(path.join(resources, 'browser', 'omni.ja'), {
     brandAssets: path.resolve('assets', 'branding'),
+    version,
   });
   const idRes = await patchAppIdentity(contents, { platform: 'mac' });
   const icons = await embedMacIcons(appDir);

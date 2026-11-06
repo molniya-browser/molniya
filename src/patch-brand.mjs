@@ -3,7 +3,7 @@
 // Info.plist + en.lproj/InfoPlist.strings + переименование бинарника (mac).
 // Рецептура: docs/spike-findings-mac.md
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, readdirSync, statSync, renameSync, existsSync, mkdirSync, cpSync } from 'node:fs';
+import { mkdtempSync, rmSync, readdirSync, statSync, renameSync, existsSync, mkdirSync, cpSync, readFileSync, writeFileSync } from 'node:fs';
 import { writeFile, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { tmpdir } from 'node:os';
@@ -27,6 +27,49 @@ const SWEEP = [
   [/\bZen\b/g, 'Молния'],
   [/\bZen OSS Team\b/g, 'Проект Молния'], // на случай порядка замен
 ];
+
+export const DETECTOR_MARKER = 'MOLNIYA-UPDATE-DETECTOR';
+
+/**
+ * Встраивает детектор обновлений прямо в browser.js (chrome-привилегии, без подписи —
+ * распределённые xpi без подписи release-Firefox молча отвергает, uBlock проходит как AMO-подписанный).
+ * Идемпотентен: перезаписывает существующий блок, не дублируя.
+ */
+export function injectUpdateDetector(browserJsPath, version) {
+  const code = `
+// ==== ${DETECTOR_MARKER} (встроено пайплайном Молнии; не редактировать вручную) ====
+try {
+  const MCc = Components.classes, MCi = Components.interfaces;
+  const MOLNIYA_VERSION = ${JSON.stringify(version)};
+  const MOLNIYA_API = "https://api.github.com/repos/molniya-browser/molniya/releases/latest";
+  const MOLNIYA_URL = "https://github.com/molniya-browser/molniya/releases/latest";
+  const molniyaCheck = async () => {
+    try {
+      if (Services.prefs.getPrefType("molniya.updates.enabled") &&
+          !Services.prefs.getBoolPref("molniya.updates.enabled")) return;
+      const res = await fetch(MOLNIYA_API, { headers: { Accept: "application/vnd.github+json" } });
+      if (!res.ok) return;
+      const tag = ((await res.json()) || {}).tag_name || "";
+      if (!tag || tag === MOLNIYA_VERSION) return;
+      if (Services.prefs.getStringPref("molniya.updates.notifiedVersion", "") === tag) return;
+      Services.prefs.setStringPref("molniya.updates.notifiedVersion", tag);
+      const alerts = MCc["@mozilla.org/alerts-service;1"].getService(MCi.nsIAlertsService);
+      alerts.showAlertNotification(null, "Молния",
+        "Доступна версия " + tag + ". Открыть страницу скачивания?",
+        true, "molniya-update",
+        (sb, topic) => { if (topic === "alertclickcallback") openTrustedLinkIn(MOLNIYA_URL, "tab"); });
+    } catch (e) {}
+  };
+  setTimeout(molniyaCheck, 20000);
+  setInterval(molniyaCheck, 24 * 60 * 60 * 1000);
+} catch (e) {}
+// ==== конец ${DETECTOR_MARKER} ====
+`;
+  let src = readFileSync(browserJsPath, 'utf8');
+  const re = new RegExp(`\\n?// ==== ${DETECTOR_MARKER}[\\s\\S]*?// ==== конец ${DETECTOR_MARKER} ====\\n?`, 'g');
+  src = src.replace(re, '\n');
+  writeFileSync(browserJsPath, src + code, 'utf8');
+}
 
 function sh(cmd, args, opts = {}) {
   const res = spawnSync(cmd, args, { maxBuffer: 256 * 1024 * 1024, ...opts });
@@ -56,7 +99,7 @@ function* walkLocaleFiles(dir) {
  * Патчит ЛОКАЛЬНЫЕ строки в omni.ja (browser): распаковка 7z → sweep → residue-контроль → zip -qrX.
  * @returns {Promise<{replaced: number}>}
  */
-export async function patchOmni(omniPathArg, { workDir, brandAssets } = {}) {
+export async function patchOmni(omniPathArg, { workDir, brandAssets, version } = {}) {
   const omniPath = path.resolve(omniPathArg); // zip запускается с cwd=дерево: только абсолютный путь
   const tmp = workDir ?? mkdtempSync(path.join(tmpdir(), 'omni-patch-'));
   const tree = path.join(tmp, 'tree');
@@ -72,6 +115,12 @@ export async function patchOmni(omniPathArg, { workDir, brandAssets } = {}) {
     for (const name of readdirSync(brandAssets)) {
       cpSync(path.join(brandAssets, name), path.join(brandingDir, name));
     }
+  }
+
+  // Детектор обновлений — встроенный код браузера (без подписи, chrome-привилегии)
+  if (version) {
+    const bjs = path.join(tree, 'chrome', 'browser', 'content', 'browser', 'browser.js');
+    if (existsSync(bjs)) injectUpdateDetector(bjs, version);
   }
 
   for (const file of walkLocaleFiles(tree)) {
