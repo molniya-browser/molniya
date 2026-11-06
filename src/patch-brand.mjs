@@ -81,7 +81,7 @@ function sh(cmd, args, opts = {}) {
 // полностью (проверено спайком: 13 597 файлов, рабочее приложение). Терпим код, проверяем содержимое.
 function extractOmni(omniPath, tree) {
   const res = spawnSync('7z', ['x', '-y', `-o${tree}`, omniPath], { maxBuffer: 256 * 1024 * 1024 });
-  const looksComplete = ['chrome.manifest', 'chrome', 'modules'].some((m) => existsSync(path.join(tree, m)));
+  const looksComplete = ['chrome.manifest', 'chrome', 'modules', 'localization'].some((m) => existsSync(path.join(tree, m)));
   if (!looksComplete) {
     throw new Error(`7z x ${omniPath} → ${res.status}: ${String(res.stderr ?? '').slice(0, 300)} (архив не распакован)`);
   }
@@ -93,6 +93,23 @@ function* walkLocaleFiles(dir) {
     if (entry.isDirectory()) yield* walkLocaleFiles(p);
     else if (LOCALE_RE.test(entry.name) && PATH_RE.test(p)) yield p;
   }
+}
+
+// About-диалог: минимум текста, обновления «поставляются сборками» (не «отключены»)
+const UPDATE_TEXT_RU = 'Обновления поставляются сборками Молния — о новой версии браузер сообщит сам';
+const UPDATE_TEXT_EN = 'Updates ship with Молния builds — the browser will notify you when a new version is out';
+const BLANK = '{ " " }';
+
+export function aboutDialogOverrides(content, ru) {
+  const text = ru ? UPDATE_TEXT_RU : UPDATE_TEXT_EN;
+  // значение + вариант .label
+  content = content.replace(/^(update-policy-disabled)( = ).*$/m, `$1$2${text}`);
+  content = content.replace(/(^\s+\.label = )Обновления отключены вашей организацией$/m, `$1${text}`);
+  // убрать абзацы про сообщество/пожертвования (лицензионную ссылку не трогаем)
+  for (const id of ['community-exp', 'community-2', 'helpus', 'helpus-referrals2', 'helpus-2']) {
+    content = content.replace(new RegExp(`^(${id.replace(/[-]/g, '\\-')}) = .*$`, 'm'), `$1 = ${BLANK}`);
+  }
+  return content;
 }
 
 /**
@@ -125,6 +142,12 @@ export async function patchOmni(omniPathArg, { workDir, brandAssets, version } =
 
   for (const file of walkLocaleFiles(tree)) {
     let content = await readFile(file, 'utf8');
+    // About-диалог: «обновления отключены» → «поставляются сборками»; комьюнити-абзацы — убрать
+    if (/aboutDialog\.ftl$/.test(file)) {
+      content = aboutDialogOverrides(content, /\/ru\//.test(file));
+      await writeFile(file, content, 'utf8');
+      if (!/Zen/.test(content)) continue;
+    }
     if (!/Zen/.test(content)) continue;
     let n = 0;
     // сначала фразы целиком, потом отдельные слова
