@@ -96,8 +96,8 @@ function* walkLocaleFiles(dir) {
 }
 
 // About-диалог: минимум текста, обновления «поставляются сборками» (не «отключены»)
-const UPDATE_TEXT_RU = 'Обновления поставляются сборками Молния — о новой версии браузер сообщит сам';
-const UPDATE_TEXT_EN = 'Updates ship with Молния builds — the browser will notify you when a new version is out';
+const UPDATE_TEXT_RU = 'О новой версии браузер сообщит сам';
+const UPDATE_TEXT_EN = 'The browser will notify you about updates';
 const BLANK = '{ " " }';
 
 export function aboutDialogOverrides(content, ru) {

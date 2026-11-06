@@ -32,7 +32,7 @@ test('aboutDialog (ru): update-policy-disabled переформулирован,
   const z = makeOmni(dir, { 'localization/ru/browser/aboutDialog.ftl': RU_ABOUT });
   await patchOmni(z, { workDir: path.join(dir, 'w'), version: '1.0-molniya.1' });
   const out = read(z, 'localization/ru/browser/aboutDialog.ftl');
-  assert.match(out, /update-policy-disabled = Обновления поставляются сборками Молния/);
+  assert.match(out, /update-policy-disabled = О новой версии браузер сообщит сам/);
   assert.doesNotMatch(out, /отключены вашей организацией/);
   // community-2 и helpus не оставляют видимого текста
   const communityLine = out.match(/^community-2 = (.*)$/m)[1];
@@ -48,5 +48,5 @@ test('aboutDialog (en): update-policy-disabled на английском', async
   const z = makeOmni(dir, { 'localization/en-US/browser/aboutDialog.ftl': RU_ABOUT });
   await patchOmni(z, { workDir: path.join(dir, 'w'), version: '1.0-molniya.1' });
   const out = read(z, 'localization/en-US/browser/aboutDialog.ftl');
-  assert.match(out, /update-policy-disabled = Updates ship with Молния/i);
+  assert.match(out, /update-policy-disabled = The browser will notify you about updates/i);
 });
