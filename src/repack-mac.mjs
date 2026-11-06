@@ -51,7 +51,8 @@ export function stageDmgContents(appDir, workDir, { style = true } = {}) {
     cpSync(rendered, bgPng);
   }
 
-  if (style) {
+  // Оформление окна требует Finder — только локально; на headless CI-раннере пропускаем
+  if (style && !process.env.CI) {
     const canonical = staging.replace(/^\/tmp/, '/private/tmp'); // Finder не любит symlink-путь
     const script = `
 tell application "Finder"
@@ -69,7 +70,7 @@ tell application "Finder"
   set position of item "Программы" of stageFolder to {530, 210}
   close theWindow
 end tell`;
-    const res = spawnSync('osascript', ['-e', script]);
+    const res = spawnSync('osascript', ['-e', script], { timeout: 20000 });
     // оформление — не блокирует сборку: даже без .DS_Store-стилей dmg валиден
     if (res.status !== 0) console.warn('dmg-стилизация не удалась (не критично):', String(res.stderr).slice(0, 200));
   }
