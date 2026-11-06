@@ -134,6 +134,39 @@ function patchBrandingPrefs(tree) {
   writeFileSync(f, lines.join('\n'), 'utf8');
 }
 
+
+// Онбординг: недостающие русские переводы welcome-шагов (дописываются, если ключа нет)
+export const WELCOME_RU = `zen-welcome-back = Назад
+zen-welcome-skip = Пропустить
+zen-welcome-import-description = Выберите браузер, из которого перенести закладки, историю и пароли — и продолжайте с того же места.
+zen-welcome-import-no = <strong>НЕТ</strong>, начать с чистого листа.
+zen-welcome-default-browser-title = Сделать { -brand-short-name } браузером по умолчанию?
+zen-welcome-default-browser-description = Ссылки из других приложений будут открываться в { -brand-short-name }. Это всегда можно изменить позже.
+zen-welcome-essentials-title = Выберите приложения, которыми пользуетесь чаще всего.
+zen-welcome-essentials-description = Отметьте любимые приложения, чтобы держать их под рукой в боковой панели.
+zen-welcome-block-ads-title = Блокировать рекламу и трекеры?
+zen-welcome-block-ads-description = { -brand-short-name } может установить для вас uBlock Origin — страницы будут загружаться чище и быстрее. Удалить его можно в любой момент.
+zen-welcome-block-ads-yes = <strong>ДА</strong>, блокируйте рекламу.
+zen-welcome-block-ads-no = <strong>НЕТ</strong>, показывать всё как есть.
+`;
+
+function patchWelcomeRu(tree) {
+  // хардкод «zen basics» → «молния»
+  const welcome = path.join(tree, 'chrome', 'browser', 'content', 'browser', 'zen-components', 'ZenWelcome.mjs');
+  if (existsSync(welcome)) {
+    writeFileSync(welcome, readFileSync(welcome, 'utf8').replaceAll('label: "zen basics",', 'label: "молния",'), 'utf8');
+  }
+  // недостающие ru-ключи welcome-шагов
+  const ftl = path.join(tree, 'localization', 'ru', 'browser', 'zen-welcome.ftl');
+  if (!existsSync(ftl)) return;
+  const existing = readFileSync(ftl, 'utf8');
+  const missing = WELCOME_RU.split('\n').filter(Boolean).filter((line) => {
+    const key = line.split(' =')[0];
+    return !new RegExp(`^${key.replace(/[-]/g, '\\-')}\\s*=`, 'm').test(existing);
+  });
+  if (missing.length) writeFileSync(ftl, existing.replace(/\n*$/, '\n') + '\n' + missing.join('\n') + '\n', 'utf8');
+}
+
 // Дефолтные имена пространств Zen → русские (идемпотентно)
 const SPACE_NAME_PATCHES = [
   ['name = "Space",', 'name = "Личное",'],
@@ -183,6 +216,9 @@ export async function patchOmni(omniPathArg, { workDir, brandAssets, version } =
 
   // Стартовые страницы брендинга — пустые; релизы — наш GitHub
   patchBrandingPrefs(tree);
+
+  // Онбординг: русские переводы недостающих шагов + «молния» вместо zen basics
+  patchWelcomeRu(tree);
 
   for (const file of walkLocaleFiles(tree)) {
     let content = await readFile(file, 'utf8');

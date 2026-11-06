@@ -59,3 +59,20 @@ pref("app.releaseNotesURL", "https://zen-browser.app/whatsnew/");
   assert.match(out, /pref\("app\.releaseNotesURL", "https:\/\/github\.com\/molniya-browser\/molniya\/releases"\);/);
   assert.doesNotMatch(out, /zen-browser\.app/);
 });
+
+test('patchOmni: onboarding — «zen basics»→«молния», недостающие ru-ключи дописаны', async () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'wl-'));
+  const z = makeOmni(dir, {
+    'chrome/browser/content/browser/zen-components/ZenWelcome.mjs': 'gZenFolders.createFolder(t, { label: "zen basics", });',
+    'localization/ru/browser/zen-welcome.ftl': 'zen-welcome-title-line1 = Добро пожаловать\nzen-welcome-back = Назад\n',
+  });
+  await patchOmni(z, { workDir: path.join(dir, 'w'), version: '1.0-molniya.1' });
+  const read = (rel) => spawnSync('7z', ['x', '-so', z, rel], { encoding: 'utf8', maxBuffer: 2 * 1024 * 1024 }).stdout;
+  assert.match(read('chrome/browser/content/browser/zen-components/ZenWelcome.mjs'), /label: "молния",/);
+  assert.doesNotMatch(read('chrome/browser/content/browser/zen-components/ZenWelcome.mjs'), /zen basics/);
+  const ftl = read('localization/ru/browser/zen-welcome.ftl');
+  assert.match(ftl, /zen-welcome-skip = Пропустить/);
+  assert.match(ftl, /zen-welcome-import-no = <strong>НЕТ<\/strong>, начать с чистого листа\./);
+  assert.match(ftl, /zen-welcome-block-ads-title = Блокировать рекламу и трекеры\?/);
+  assert.equal((ftl.match(/zen-welcome-back = Назад/g) ?? []).length, 1, 'существующий ключ не дублируется');
+});
