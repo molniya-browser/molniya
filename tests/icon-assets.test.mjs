@@ -15,6 +15,9 @@ function pngDimensions(buffer) {
 test('SVG иконки автономен и содержит согласованное слабое свечение', () => {
   const svg = readFileSync(path.join(design, 'molniya.svg'), 'utf8');
   assert.match(svg, /viewBox="0 0 1024 1024"/);
+  const tile = svg.match(/<rect x="30"[^>]+\/>/)?.[0];
+  assert.ok(tile, 'внешняя плитка найдена');
+  assert.doesNotMatch(tile, /\sstroke=/, 'у внешней плитки не должно быть окантовки');
   assert.match(svg, /stdDeviation="18"/);
   assert.match(svg, /opacity="0\.12"/);
   assert.match(svg, /mask="url\(#centerGlow\)"/);

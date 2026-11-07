@@ -25,7 +25,7 @@
       <feGaussianBlur stdDeviation="18"/>
     </filter>
   </defs>
-  <rect x="30" y="30" width="964" height="964" rx="224" fill="url(#bg)" stroke="#d9e2ed" stroke-opacity="0.72" stroke-width="4"/>
+  <rect x="30" y="30" width="964" height="964" rx="224" fill="url(#bg)"/>
   <path d="M724 110 L302 545 L480 533 L304 881 L730 427 L530 443 Z" fill="#087bff" opacity="0.12" filter="url(#softGlow)" mask="url(#centerGlow)"/>
   <path d="M724 110 L302 545 L480 533 L304 881 L730 427 L530 443 Z" fill="url(#bolt)" stroke="#54ddff" stroke-opacity="0.6" stroke-width="4"/>
 </svg>
