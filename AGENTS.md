@@ -22,6 +22,7 @@
 - Только стандартная библиотека Node.js; npm-зависимостей и lock-файла нет. `npm install` для работы не требуется.
 - Внешние программы: `curl`, `7z`, `zip`, `unzip`, `xz`, `tar`.
 - Для macOS дополнительно: `hdiutil`, `codesign`, `iconutil`; тесты macOS-идентичности используют также `plutil`.
+- Для генератора иконок на macOS дополнительно используются `qlmanage`, `sips`, `iconutil` и `pngquant` (`brew install pngquant`).
 - Детектор обновлений — Firefox WebExtension Manifest V2 на vanilla JavaScript.
 - Лендинг — статические HTML/CSS/JavaScript без сборщика и фреймворков.
 - CI и публикация — GitHub Actions и GitHub Releases; лендинг деплоится на VPS с Caddy (rsync по SSH).
@@ -44,6 +45,7 @@
 - `src/detector-version.mjs` — чистая логика сравнения версий `<zenTag>-molniya.<N>` для детектора обновлений; функция встраивается в browser.js целиком (toString).
 - `landing/` — сайт `molniya-browser.ru`: `index.html`, `thank-you-zen.html`, `style.css`, `app.js` и иконка. Кнопки ведут на общий `releases/latest`, а `app.js` подсвечивает вероятную ОС пользователя.
 - `assets/branding/` — готовые SVG/PNG, копируемые в browser `omni.ja`; `assets/molniya.icns` — иконки macOS-бандла. `assets/candidates/` и `design/` — исходные/альтернативные дизайн-материалы, не часть runtime.
+- `design/molniya-icon/molniya.svg` — источник иконки; `node design/molniya-icon/make_icon_assets.mjs` создаёт macOS `.iconset/.icns`, PNG для Windows и `landing/molniya-512.png`.
 - `scripts/toolcheck.mjs` — проверка внешних программ; `scripts/check-links.mjs` — извлечение и HTTP HEAD-проверка внешних ссылок лендинга.
 - `tests/` — тесты `node:test` с фикстурами во временных каталогах.
 - `.github/workflows/release.yml` — ручная сборка и draft release; `.github/workflows/landing-deploy.yml` — деплой лендинга на VPS.

@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import process from 'node:process';
 
 const COMMON = ['curl', '7z', 'zip', 'unzip', 'xz', 'tar'];
-const MAC_ONLY = ['hdiutil', 'codesign', 'iconutil'];
+const MAC_ONLY = ['hdiutil', 'codesign', 'iconutil', 'qlmanage', 'sips', 'pngquant'];
 
 const tools = process.platform === 'darwin' ? [...COMMON, ...MAC_ONLY] : COMMON;
 
@@ -16,10 +16,10 @@ for (const tool of tools) {
   console.log(`${ok ? '✓' : '✗'}  ${tool}`);
 }
 if (process.platform !== 'darwin') {
-  console.log('–  hdiutil / codesign / iconutil пропущены (не macOS)');
+  console.log('–  hdiutil / codesign / iconutil / qlmanage / sips / pngquant пропущены (не macOS)');
 }
 if (failed > 0) {
-  console.error(`\nОтсутствуют инструменты: ${failed} шт. Установите (macOS: brew install p7zip) и повторите.`);
+  console.error(`\nОтсутствуют инструменты: ${failed} шт. Установите (macOS: brew install p7zip pngquant) и повторите.`);
   // 7z — бинарник формулы p7zip; «7zz» из плана — это формула sevenzip, функционально то же (см. ledger).
   process.exit(1);
 }
